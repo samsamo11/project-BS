@@ -24,9 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role === 'admin') {
-      return NextResponse.json({ error: 'المدير لا يمكنه إنشاء مشاريع' }, { status: 403 });
-    }
+    // Admin can also create projects
 
     const { name } = await request.json();
     if (!name) {

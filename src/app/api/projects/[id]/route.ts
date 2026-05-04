@@ -37,15 +37,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role === 'admin') {
-      return NextResponse.json({ error: 'المدير لا يمكنه تعديل المشاريع' }, { status: 403 });
-    }
-
     const { id } = await params;
     const body = await request.json();
 
     const project = await getProjectById(id);
-    if (project.user_id !== session.userId) {
+    if (session.role !== 'admin' && project.user_id !== session.userId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     }
 
@@ -67,14 +63,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.role === 'admin') {
-      return NextResponse.json({ error: 'المدير لا يمكنه حذف المشاريع' }, { status: 403 });
-    }
-
     const { id } = await params;
 
     const project = await getProjectById(id);
-    if (project.user_id !== session.userId) {
+    if (session.role !== 'admin' && project.user_id !== session.userId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 });
     }
 

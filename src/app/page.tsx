@@ -332,20 +332,18 @@ export default function HomePage() {
 
           <div className="flex items-center gap-1 sm:gap-2">
             {/* Project selector (mobile) */}
-            {user?.role !== 'admin' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20 text-xs sm:text-sm"
-                onClick={() => setShowProjectsPanel(true)}
-              >
-                <Building2 className="w-4 h-4 ms-1 sm:me-2 sm:ms-0" />
-                <span className="hidden sm:inline max-w-[150px] truncate">
-                  {currentProject?.name || t.projects}
-                </span>
-                <span className="sm:hidden">...</span>
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 text-xs sm:text-sm"
+              onClick={() => setShowProjectsPanel(true)}
+            >
+              <Building2 className="w-4 h-4 ms-1 sm:me-2 sm:ms-0" />
+              <span className="hidden sm:inline max-w-[150px] truncate">
+                {currentProject?.name || t.projects}
+              </span>
+              <span className="sm:hidden">...</span>
+            </Button>
 
             {user?.role === 'admin' && (
               <Button
@@ -375,7 +373,7 @@ export default function HomePage() {
         {/* Sidebar - Desktop */}
         <aside className="no-print hidden lg:flex w-64 flex-col border-e bg-card border-sidebar-border overflow-y-auto shrink-0">
           {/* Project Selector */}
-          {user?.role !== 'admin' && (
+          {(
             <div className="p-3 border-b">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
@@ -538,19 +536,7 @@ export default function HomePage() {
 
           {/* Content Area */}
           <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto" id="report-content">
-            {user?.role === 'admin' && !['about', 'settings'].includes(activeTab) ? (
-              <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
-                <CardContent className="p-6 text-center">
-                  <Shield className="w-12 h-12 mx-auto mb-3 text-amber-500" />
-                  <h2 className="text-lg font-semibold mb-1">وضع القراءة فقط</h2>
-                  <p className="text-muted-foreground text-sm">المدير يمكنه رؤية المشاريع فقط. للاطلاع على جميع المشاريع، يرجى الانتقال إلى لوحة الإدارة.</p>
-                  <Button className="mt-4" onClick={() => router.push('/admin')}>
-                    <Shield className="w-4 h-4 me-2" />
-                    لوحة الإدارة
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-10 w-10 border-4 border-emerald-500 border-t-transparent" />
               </div>
