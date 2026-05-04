@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, signToken } from '@/lib/auth';
-import { isDeviceAllowed } from '@/lib/db-operations';
+import { signToken } from '@/lib/auth';
+import { authenticateUser, isDeviceAllowed } from '@/lib/db-operations';
 
 export async function POST(request: NextRequest) {
   try {
