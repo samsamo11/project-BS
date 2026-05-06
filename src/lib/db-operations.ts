@@ -10,17 +10,7 @@ export async function setupSupabaseTables() {
       password_hash TEXT NOT NULL,
       full_name TEXT NOT NULL DEFAULT '',
       role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-      max_devices INTEGER NOT NULL DEFAULT 2,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`,
-    `CREATE TABLE IF NOT EXISTS devices (
-      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      device_id TEXT NOT NULL,
-      device_name TEXT NOT NULL DEFAULT 'Unknown Device',
-      is_active BOOLEAN NOT NULL DEFAULT true,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE(user_id, device_id)
     )`,
     `CREATE TABLE IF NOT EXISTS projects (
       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -41,8 +31,6 @@ export async function setupSupabaseTables() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`,
     `CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_devices_device_id ON devices(device_id)`,
   ];
 
   const { error } = await supabaseAdmin.rpc('exec_sql', { sql_query: '' }).catch(() => ({ error: true }));
@@ -110,7 +98,7 @@ export async function authenticateUser(username: string, password: string) {
 export async function getUserById(id: string) {
   const { data, error } = await supabase
     .from('users')
-    .select('id, username, full_name, role, max_devices, created_at')
+    .select('id, username, full_name, role, created_at')
     .eq('id', id)
     .single();
 
@@ -121,7 +109,7 @@ export async function getUserById(id: string) {
 export async function getAllUsers() {
   const { data, error } = await supabase
     .from('users')
-    .select('id, username, full_name, role, max_devices, created_at')
+    .select('id, username, full_name, role, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error('فشل جلب المستخدمين');
@@ -141,61 +129,6 @@ export async function changePassword(userId: string, newPassword: string) {
     .eq('id', userId);
 
   if (error) throw new Error('فشل تغيير كلمة المرور');
-}
-
-// ======== Device Operations ========
-export async function getDevicesByUser(userId: string) {
-  const { data, error } = await supabase
-    .from('devices')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw new Error('فشل جلب الأجهزة');
-  return data || [];
-}
-
-export async function addDevice(userId: string, deviceId: string, deviceName: string) {
-  const { error } = await supabase
-    .from('devices')
-    .upsert({
-      user_id: userId,
-      device_id: deviceId,
-      device_name: deviceName,
-      is_active: true,
-    }, { onConflict: 'user_id,device_id' });
-
-  if (error) throw new Error('فشل إضافة الجهاز');
-}
-
-export async function toggleDevice(deviceId: string, isActive: boolean) {
-  const { error } = await supabase
-    .from('devices')
-    .update({ is_active: isActive })
-    .eq('id', deviceId);
-
-  if (error) throw new Error('فشل تحديث الجهاز');
-}
-
-export async function deleteDevice(deviceId: string) {
-  const { error } = await supabase
-    .from('devices')
-    .delete()
-    .eq('id', deviceId);
-
-  if (error) throw new Error('فشل حذف الجهاز');
-}
-
-export async function isDeviceAllowed(userId: string, deviceId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('devices')
-    .select('is_active')
-    .eq('user_id', userId)
-    .eq('device_id', deviceId)
-    .eq('is_active', true)
-    .single();
-
-  return !!data;
 }
 
 // ======== Project Operations ========

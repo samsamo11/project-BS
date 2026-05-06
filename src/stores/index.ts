@@ -128,24 +128,6 @@ export const useProjectStore = create<ProjectStore>()((set) => ({
   resetProjectData: () => set({ projectData: { ...defaultProjectData } }),
 }));
 
-// ======== Device Store ========
-interface DeviceStore {
-  deviceId: string | null;
-  setDeviceId: (id: string) => void;
-}
-
-export const useDeviceStore = create<DeviceStore>()(
-  persist(
-    (set) => ({
-      deviceId: null,
-      setDeviceId: (deviceId) => set({ deviceId }),
-    }),
-    {
-      name: 'bs-device-id',
-    }
-  )
-);
-
 // ======== UI Store ========
 interface UIState {
   activeTab: string;

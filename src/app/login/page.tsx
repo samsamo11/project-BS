@@ -1,49 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Shield, Lock, Loader2, AlertTriangle, Smartphone } from 'lucide-react';
+import { Building2, Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useAuthStore, useDeviceStore } from '@/stores';
+import { useAuthStore } from '@/stores';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const { deviceId, setDeviceId } = useDeviceStore();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-
-  // Generate or retrieve device ID on mount
-  useEffect(() => {
-    if (deviceId) {
-      setIsReady(true);
-      return;
-    }
-
-    const storedId = localStorage.getItem('bs-device-id');
-    if (storedId) {
-      setDeviceId(storedId);
-    } else {
-      const newId = crypto.randomUUID();
-      localStorage.setItem('bs-device-id', newId);
-      setDeviceId(newId);
-    }
-    setIsReady(true);
-  }, [deviceId, setDeviceId]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError('');
-      setErrorCode(null);
 
       if (!username.trim() || !password.trim()) {
         setError('يرجى إدخال اسم المستخدم وكلمة المرور');
@@ -59,7 +37,6 @@ export default function LoginPage() {
           body: JSON.stringify({
             username: username.trim(),
             password,
-            deviceId,
           }),
         });
 
@@ -67,7 +44,6 @@ export default function LoginPage() {
 
         if (!res.ok) {
           setError(data.error || 'حدث خطأ أثناء تسجيل الدخول');
-          setErrorCode(data.code || null);
           return;
         }
 
@@ -85,7 +61,7 @@ export default function LoginPage() {
         setIsLoading(false);
       }
     },
-    [username, password, deviceId, setAuth, router]
+    [username, password, setAuth, router]
   );
 
   return (
@@ -141,24 +117,10 @@ export default function LoginPage() {
           <CardContent className="pt-2">
             {/* Error Messages */}
             {error && (
-              <div
-                className={`mb-4 p-3 rounded-lg border text-sm flex items-start gap-3 ${
-                  errorCode === 'DEVICE_NOT_AUTHORIZED'
-                    ? 'bg-amber-50 border-amber-200 text-amber-800'
-                    : 'bg-red-50 border-red-200 text-red-800'
-                }`}
-              >
-                <AlertTriangle
-                  className={`w-5 h-5 shrink-0 mt-0.5 ${
-                    errorCode === 'DEVICE_NOT_AUTHORIZED' ? 'text-amber-500' : 'text-red-500'
-                  }`}
-                />
+              <div className="mb-4 p-3 rounded-lg border text-sm flex items-start gap-3 bg-red-50 border-red-200 text-red-800">
+                <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
                 <div>
-                  <p className="font-medium">
-                    {errorCode === 'DEVICE_NOT_AUTHORIZED'
-                      ? 'الجهاز غير مصرح به'
-                      : 'خطأ في تسجيل الدخول'}
-                  </p>
+                  <p className="font-medium">خطأ في تسجيل الدخول</p>
                   <p className="mt-0.5 opacity-80">{error}</p>
                 </div>
               </div>
@@ -208,7 +170,7 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading || !isReady}
+                disabled={isLoading}
                 className="w-full h-11 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
               >
                 {isLoading ? (
@@ -224,16 +186,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Device ID indicator */}
-            {isReady && deviceId && (
-              <div className="mt-4 flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-                <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate" title={deviceId}>
-                  معرّف الجهاز: {deviceId.slice(0, 8)}...
-                </span>
-              </div>
-            )}
           </CardContent>
         </Card>
 

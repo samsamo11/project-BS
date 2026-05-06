@@ -15,7 +15,6 @@ export async function GET() {
       username: user.username,
       fullName: user.full_name,
       role: user.role,
-      maxDevices: user.max_devices,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';

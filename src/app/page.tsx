@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore, useProjectStore, useUIStore, useDeviceStore } from '@/stores';
+import { useAuthStore, useProjectStore, useUIStore } from '@/stores';
 import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -81,7 +81,6 @@ export default function HomePage() {
     isLoading,
     setLoading,
   } = useProjectStore();
-  const { deviceId } = useDeviceStore();
 
   const [mounted, setMounted] = useState(false);
   const [showNewProject, setShowNewProject] = useState(false);

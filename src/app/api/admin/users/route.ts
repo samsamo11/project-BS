@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import { createUser, getAllUsers, getDevicesByUser } from '@/lib/db-operations';
+import { createUser, getAllUsers } from '@/lib/db-operations';
 
 export async function GET() {
   try {
     await requireAdmin();
     const users = await getAllUsers();
-
-    const usersWithDevices = await Promise.all(
-      users.map(async (user) => {
-        const devices = await getDevicesByUser(user.id);
-        return { ...user, devices };
-      })
-    );
-
-    return NextResponse.json(usersWithDevices);
+    return NextResponse.json(users);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
     return NextResponse.json({ error: message }, { status: message === 'Forbidden' ? 403 : 500 });
