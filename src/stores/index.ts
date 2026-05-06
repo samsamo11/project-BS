@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Language } from '@/lib/translations';
+
+// ======== Store Versioning ========
+// Increment this when store schema changes to trigger migration
+const AUTH_STORE_VERSION = 1;
+const SETTINGS_STORE_VERSION = 1;
 
 // ======== Auth Store ========
 interface AuthState {
@@ -25,10 +30,26 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'bs-auth',
+      version: AUTH_STORE_VERSION,
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') return localStorage;
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         user: state.user,
       }),
+      // Migration: if version changes, reset the store
+      migrate: (persisted, version) => {
+        if (version !== AUTH_STORE_VERSION) {
+          return { isAuthenticated: false, user: null };
+        }
+        return persisted as AuthState;
+      },
     }
   )
 );
@@ -53,21 +74,45 @@ export const useSettingsStore = create<SettingsState>()(
       language: 'ar',
       units: {
         dimension: 'cm',
-        area: 'm²',
+        area: 'm\u00B2',
         load: 'ton',
-        stress: 'kg/cm²',
-        density: 'kg/m³',
+        stress: 'kg/cm\u00B2',
+        density: 'kg/m\u00B3',
       },
       setLanguage: (language) => set({ language }),
       setUnits: (units) => set({ units }),
     }),
     {
       name: 'bs-evaluation-settings',
+      version: SETTINGS_STORE_VERSION,
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') return localStorage;
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
+      migrate: (persisted, version) => {
+        if (version !== SETTINGS_STORE_VERSION) {
+          return {
+            language: 'ar' as Language,
+            units: {
+              dimension: 'cm',
+              area: 'm\u00B2',
+              load: 'ton',
+              stress: 'kg/cm\u00B2',
+              density: 'kg/m\u00B3',
+            },
+          };
+        }
+        return persisted as SettingsState;
+      },
     }
   )
 );
 
-// ======== Project Store ========
+// ======== Project Store (NOT persisted — syncs from Supabase) ========
 interface ProjectData {
   building_data: Record<string, unknown>;
   architectural_report: Record<string, unknown>;
@@ -128,7 +173,7 @@ export const useProjectStore = create<ProjectStore>()((set) => ({
   resetProjectData: () => set({ projectData: { ...defaultProjectData } }),
 }));
 
-// ======== UI Store ========
+// ======== UI Store (NOT persisted — ephemeral UI state) ========
 interface UIState {
   activeTab: string;
   sidebarOpen: boolean;

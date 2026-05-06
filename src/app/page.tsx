@@ -40,8 +40,6 @@ import {
   FileOutput,
   Settings,
   Info,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Trash2,
   Edit3,
@@ -143,7 +141,7 @@ export default function HomePage() {
         });
       }
     } catch {
-      // silent fail
+      // silent fail — data is in local state
     }
   };
 
@@ -171,16 +169,26 @@ export default function HomePage() {
 
   const handleSelectProject = async (projectId: string) => {
     try {
-      await fetch('/api/projects', {
+      const res = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_current: true }),
       });
-      setCurrentProjectId(projectId);
-      loadProjectData(projectId);
-      setShowProjectsPanel(false);
+      if (res.ok) {
+        setCurrentProjectId(projectId);
+        loadProjectData(projectId);
+        // Optimistic update: reflect is_current in local project list
+        setProjects(
+          (useProjectStore.getState().projects || []).map((p: { id: string; is_current: boolean }) => ({
+            ...p,
+            is_current: p.id === projectId,
+          }))
+        );
+      }
     } catch {
-      // silent
+      // silent — project still switches in local state
+    } finally {
+      setShowProjectsPanel(false);
     }
   };
 
@@ -243,7 +251,7 @@ export default function HomePage() {
           body: JSON.stringify({ [section]: data }),
         });
       } catch {
-        // silent fail - data is in local state
+        // silent fail — data is preserved in local state
       }
     },
     [currentProjectId, user?.role]
@@ -372,37 +380,35 @@ export default function HomePage() {
         {/* Sidebar - Desktop */}
         <aside className="no-print hidden lg:flex w-64 flex-col border-e bg-card border-sidebar-border overflow-y-auto shrink-0">
           {/* Project Selector */}
-          {(
-            <div className="p-3 border-b">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <ScrollArea className="max-h-40">
-                {projects.map((p: { id: string; name: string; is_current: boolean }) => (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
-                      p.id === currentProjectId
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-accent'
-                    }`}
-                    onClick={() => handleSelectProject(p.id)}
-                  >
-                    <span className="truncate flex-1">{p.name}</span>
-                    {p.is_current && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/60 shrink-0" />
-                    )}
-                  </div>
-                ))}
-                {projects.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-2">{t.noProjects}</p>
-                )}
-              </ScrollArea>
+          <div className="p-3 border-b">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          )}
+            <ScrollArea className="max-h-40">
+              {projects.map((p: { id: string; name: string; is_current: boolean }) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
+                    p.id === currentProjectId
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent'
+                  }`}
+                  onClick={() => handleSelectProject(p.id)}
+                >
+                  <span className="truncate flex-1">{p.name}</span>
+                  {p.is_current && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/60 shrink-0" />
+                  )}
+                </div>
+              ))}
+              {projects.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">{t.noProjects}</p>
+              )}
+            </ScrollArea>
+          </div>
 
           <Separator />
 
@@ -456,29 +462,27 @@ export default function HomePage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Same sidebar content */}
-              {user?.role !== 'admin' && (
-                <div className="p-3 border-b">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
-                      <Plus className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  <ScrollArea className="max-h-40">
-                    {projects.map((p: { id: string; name: string; is_current: boolean }) => (
-                      <div
-                        key={p.id}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
-                          p.id === currentProjectId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                        }`}
-                        onClick={() => { handleSelectProject(p.id); setSidebarOpen(false); }}
-                      >
-                        <span className="truncate flex-1">{p.name}</span>
-                      </div>
-                    ))}
-                  </ScrollArea>
+              <div className="p-3 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-              )}
+                <ScrollArea className="max-h-40">
+                  {projects.map((p: { id: string; name: string; is_current: boolean }) => (
+                    <div
+                      key={p.id}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
+                        p.id === currentProjectId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
+                      }`}
+                      onClick={() => { handleSelectProject(p.id); setSidebarOpen(false); }}
+                    >
+                      <span className="truncate flex-1">{p.name}</span>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
               <Separator />
               <ScrollArea className="flex-1 py-2 px-2 max-h-[calc(100vh-200px)]">
                 <nav className="space-y-0.5">

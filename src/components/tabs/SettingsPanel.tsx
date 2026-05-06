@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Settings } from 'lucide-react';
+import { Settings, Lock, Globe, Ruler } from 'lucide-react';
 import { useSettingsStore } from '@/stores';
 import { useTranslation } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -25,9 +25,9 @@ const dimensionUnits = [
 ];
 
 const areaUnits = [
-  { value: 'm²', label: 'm²' },
-  { value: 'ft²', label: 'ft²' },
-  { value: 'cm²', label: 'cm²' },
+  { value: 'm\u00B2', label: 'm\u00B2' },
+  { value: 'ft\u00B2', label: 'ft\u00B2' },
+  { value: 'cm\u00B2', label: 'cm\u00B2' },
 ];
 
 const loadUnits = [
@@ -37,14 +37,14 @@ const loadUnits = [
 ];
 
 const stressUnits = [
-  { value: 'kg/cm²', label: 'kg/cm²' },
+  { value: 'kg/cm\u00B2', label: 'kg/cm\u00B2' },
   { value: 'MPa', label: 'MPa' },
   { value: 'kPa', label: 'kPa' },
 ];
 
 const densityUnits = [
-  { value: 'kg/m³', label: 'kg/m³' },
-  { value: 'kN/m³', label: 'kN/m³' },
+  { value: 'kg/m\u00B3', label: 'kg/m\u00B3' },
+  { value: 'kN/m\u00B3', label: 'kN/m\u00B3' },
 ];
 
 export default function SettingsPanel() {
@@ -79,8 +79,13 @@ export default function SettingsPanel() {
       return;
     }
 
-    if (newPassword.length < 4) {
-      toast.error('كلمة المرور الجديدة يجب أن تكون 4 أحرف على الأقل');
+    if (newPassword.length < 8) {
+      toast.error('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+
+    if (newPassword.length > 128) {
+      toast.error('كلمة المرور طويلة جداً (الحد الأقصى 128 حرف)');
       return;
     }
 
@@ -119,15 +124,15 @@ export default function SettingsPanel() {
         <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <Settings className="h-5 w-5" />
+              <Globe className="h-5 w-5" />
             </div>
-            <span>اللغة والعرض</span>
+            <span>{language === 'ar' ? 'اللغة والعرض' : 'Language & Display'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-2 max-w-md">
             <Label className="text-sm font-medium text-foreground/80">
-              اللغة
+              {language === 'ar' ? 'اللغة' : 'Language'}
             </Label>
             <Select
               value={language}
@@ -142,7 +147,9 @@ export default function SettingsPanel() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
-              سيتم إعادة تحميل الصفحة عند تغيير اللغة
+              {language === 'ar'
+                ? 'سيتم إعادة تحميل الصفحة عند تغيير اللغة'
+                : 'Page will reload when changing language'}
             </p>
           </div>
         </CardContent>
@@ -153,24 +160,9 @@ export default function SettingsPanel() {
         <CardHeader className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <path d="M10 9H8" />
-              </svg>
+              <Ruler className="h-5 w-5" />
             </div>
-            <span>إعدادات الوحدات</span>
+            <span>{language === 'ar' ? 'إعدادات الوحدات' : 'Unit Settings'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -178,7 +170,7 @@ export default function SettingsPanel() {
             {/* Dimension Units */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                وحدات الأبعاد
+                {language === 'ar' ? 'وحدات الأبعاد' : 'Dimension Units'}
               </Label>
               <Select
                 value={units.dimension}
@@ -200,7 +192,7 @@ export default function SettingsPanel() {
             {/* Area Units */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                وحدات المساحة
+                {language === 'ar' ? 'وحدات المساحة' : 'Area Units'}
               </Label>
               <Select
                 value={units.area}
@@ -222,7 +214,7 @@ export default function SettingsPanel() {
             {/* Load Units */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                وحدات الحمولات
+                {language === 'ar' ? 'وحدات الحمولات' : 'Load Units'}
               </Label>
               <Select
                 value={units.load}
@@ -244,7 +236,7 @@ export default function SettingsPanel() {
             {/* Stress Units */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                وحدات الإجهادات
+                {language === 'ar' ? 'وحدات الإجهادات' : 'Stress Units'}
               </Label>
               <Select
                 value={units.stress}
@@ -266,7 +258,7 @@ export default function SettingsPanel() {
             {/* Density Units */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                وحدات الكثافة
+                {language === 'ar' ? 'وحدات الكثافة' : 'Density Units'}
               </Label>
               <Select
                 value={units.density}
@@ -288,7 +280,9 @@ export default function SettingsPanel() {
 
           <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
-              💡 يتم حفظ إعدادات الوحدات تلقائياً
+              {language === 'ar'
+                ? 'يتم حفظ إعدادات الوحدات تلقائياً'
+                : 'Unit settings are saved automatically'}
             </p>
           </div>
         </CardContent>
@@ -299,60 +293,53 @@ export default function SettingsPanel() {
         <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">
             <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <Lock className="h-5 w-5" />
             </div>
-            <span>تغيير كلمة المرور</span>
+            <span>{language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="max-w-md space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                كلمة المرور الحالية
+                {language === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
               </Label>
               <Input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="أدخل كلمة المرور الحالية"
+                placeholder={language === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
                 className="w-full"
               />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                كلمة المرور الجديدة
+                {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
               </Label>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="أدخل كلمة المرور الجديدة"
+                placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
                 className="w-full"
               />
+              <p className="text-xs text-muted-foreground">
+                {language === 'ar'
+                  ? 'الحد الأدنى 8 أحرف، الحد الأقصى 128 حرف'
+                  : 'Minimum 8 characters, maximum 128'}
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground/80">
-                تأكيد كلمة المرور
+                {language === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
               </Label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="أعد إدخال كلمة المرور الجديدة"
+                placeholder={language === 'ar' ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
                 className="w-full"
               />
             </div>
@@ -369,10 +356,10 @@ export default function SettingsPanel() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    جاري التغيير...
+                    {language === 'ar' ? 'جاري التغيير...' : 'Changing...'}
                   </span>
                 ) : (
-                  'تغيير كلمة المرور'
+                  (language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password')
                 )}
               </Button>
             </div>

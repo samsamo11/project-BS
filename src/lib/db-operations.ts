@@ -1,51 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { supabase, supabaseAdmin } from './supabase';
 
-// ======== Supabase Table Setup ========
-export async function setupSupabaseTables() {
-  const tables = [
-    `CREATE TABLE IF NOT EXISTS users (
-      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      full_name TEXT NOT NULL DEFAULT '',
-      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`,
-    `CREATE TABLE IF NOT EXISTS projects (
-      id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      name TEXT NOT NULL DEFAULT 'مشروع جديد',
-      is_current BOOLEAN NOT NULL DEFAULT false,
-      building_data JSONB NOT NULL DEFAULT '{}',
-      architectural_report JSONB NOT NULL DEFAULT '{}',
-      structural_report JSONB NOT NULL DEFAULT '{}',
-      foundations JSONB NOT NULL DEFAULT '{}',
-      columns_walls JSONB NOT NULL DEFAULT '{}',
-      beam_slab JSONB NOT NULL DEFAULT '{}',
-      electrical JSONB NOT NULL DEFAULT '{}',
-      plumbing JSONB NOT NULL DEFAULT '{}',
-      technical_notes JSONB NOT NULL DEFAULT '{}',
-      final_report JSONB NOT NULL DEFAULT '{}',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )`,
-    `CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)`,
-  ];
-
-  const { error } = await supabaseAdmin.rpc('exec_sql', { sql_query: '' }).catch(() => ({ error: true }));
-
-  // Try direct table creation via REST
-  for (const sql of tables) {
-    try {
-      // We'll use the service role to create tables via Supabase Management API
-      // For initial setup, we'll handle this differently
-    } catch (e) {
-      // Table might already exist
-    }
-  }
-}
-
 // ======== User Operations ========
 export async function createUser(
   username: string,
@@ -159,7 +114,7 @@ export async function getProjectById(projectId: string) {
 }
 
 export async function createProject(userId: string, name: string) {
-  // Unset current for other projects
+  // Unset current for other projects of this user
   await supabase
     .from('projects')
     .update({ is_current: false })
@@ -198,18 +153,4 @@ export async function deleteProject(projectId: string) {
     .eq('id', projectId);
 
   if (error) throw new Error('فشل حذف المشروع');
-}
-
-export async function setCurrentProject(userId: string, projectId: string) {
-  await supabase
-    .from('projects')
-    .update({ is_current: false })
-    .eq('user_id', userId);
-
-  const { error } = await supabase
-    .from('projects')
-    .update({ is_current: true })
-    .eq('id', projectId);
-
-  if (error) throw new Error('فشل تحديد المشروع الحالي');
 }
