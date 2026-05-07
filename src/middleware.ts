@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'bs-evaluation-jwt-secret-2024-x9k2m'
-);
+// JWT secret must be set via environment variable
+if (!process.env.JWT_SECRET) {
+  throw new Error('[CONFIG] JWT_SECRET is not set. Please add it to your .env.local file.');
+}
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 const publicPaths = ['/login', '/manifest.json', '/robots.txt'];
 const publicApiPaths = ['/api/auth/login'];
