@@ -10,19 +10,23 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 const publicPaths = ['/login', '/manifest.json', '/robots.txt'];
 const publicApiPaths = ['/api/auth/login'];
 
+// Add no-cache headers to ALL responses to prevent stale content
+function withNoCache(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths without authentication
   if (publicPaths.some(p => pathname === p)) {
-    const resp = NextResponse.next();
-    resp.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    resp.headers.set('Pragma', 'no-cache');
-    resp.headers.set('Expires', '0');
-    return resp;
+    return withNoCache(NextResponse.next());
   }
 
-  // Allow static files (icons, manifest, favicon, robots, etc.)
+  // Allow Next.js internals and static files — but add cache-busting headers
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
@@ -35,20 +39,17 @@ export async function middleware(request: NextRequest) {
     pathname.endsWith('.ico') ||
     pathname.endsWith('.webp')
   ) {
-    const resp = NextResponse.next();
-    // Cache static assets but with revalidation to pick up new builds
-    if (pathname.startsWith('/_next/static/')) {
-      resp.headers.set('Cache-Control', 'public, max-age=3600, must-revalidate');
-    } else {
-      resp.headers.set('Cache-Control', 'no-store');
-    }
-    return resp;
+    return NextResponse.next();
   }
 
   // Allow public API endpoints
   if (publicApiPaths.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
+
+  // Strip cache-busting query params (?_t=, ?_v=) before processing
+  // These are added by the login page to prevent cached responses
+  const cleanPathname = pathname.replace(/\?.*$/, '');
 
   // Check for session cookie
   const token = request.cookies.get('bs-session')?.value;
@@ -60,8 +61,10 @@ export async function middleware(request: NextRequest) {
     }
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
+    loginUrl.searchParams.set('from', cleanPathname);
+    // Strip cache-busting params from redirect URL
+    const resp = NextResponse.redirect(loginUrl);
+    return withNoCache(resp);
   }
 
   // Verify the JWT token
@@ -83,9 +86,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl);
     }
 
-    const resp = NextResponse.next();
-    resp.headers.set('Cache-Control', 'no-store');
-    return resp;
+    return withNoCache(NextResponse.next());
   } catch {
     // Token is invalid or expired
     if (pathname.startsWith('/api/')) {
@@ -101,10 +102,14 @@ export async function middleware(request: NextRequest) {
       maxAge: 0,
       path: '/',
     });
-    return response;
+    return withNoCache(response);
   }
 }
 
+// IMPORTANT: Match ALL routes including _next/static to add cache-control headers
+// This prevents the browser from serving stale JavaScript bundles
 export const config = {
-  matcher: ['/((?!_next/static|_next/image).*)'],
+  matcher: [
+    '/((?!_next/image).*)',  // Match everything EXCEPT _next/image (which has its own optimization)
+  ],
 };

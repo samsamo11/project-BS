@@ -110,7 +110,7 @@ export default function HomePage() {
       return;
     }
     // Server-side validation: verify the cookie is still valid
-    fetch('/api/auth/me').then((res) => {
+    fetch('/api/auth/me?_t=' + Date.now(), { credentials: 'include' }).then((res) => {
       if (res.status === 401) {
         clearAuth();
         router.push('/login');
@@ -129,7 +129,7 @@ export default function HomePage() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/projects');
+      const res = await fetch('/api/projects?_t=' + Date.now(), { credentials: 'include' });
       if (res.status === 401) {
         clearAuth();
         router.push('/login');

@@ -59,6 +59,27 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="B.S Evaluation" />
+        {/* CRITICAL: Destroy any Service Workers from previous versions.
+            This script runs BEFORE React hydrates, ensuring stale SW cannot
+            intercept network requests or serve cached responses. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(reg) { reg.unregister(); });
+                  });
+                }
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    names.forEach(function(name) { caches.delete(name); });
+                  });
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}

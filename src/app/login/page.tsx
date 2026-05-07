@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuthStore } from '@/stores';
+
+// Cache-busting version — increment when deploying a new build
+// This forces the browser to bypass any cached Service Worker or stale JS files
+const BUILD_VERSION = '20260508-v5';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +21,52 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // ─────────────────────────────────────────────────────
+  // AGGRESSIVE CACHE & SERVICE WORKER CLEANUP
+  // Runs once on mount to destroy any stale SW or cached data
+  // from previous versions of the app.
+  // ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const cleanup = async () => {
+      try {
+        // 1. Unregister ALL service workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) {
+            await reg.unregister();
+          }
+        }
+
+        // 2. Clear ALL Cache API caches
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          for (const name of cacheNames) {
+            await caches.delete(name);
+          }
+        }
+
+        // 3. Clear stale Zustand auth store from localStorage
+        // (prevents hydration of corrupted auth state from old sessions)
+        const staleAuth = localStorage.getItem('bs-auth');
+        if (staleAuth) {
+          try {
+            const parsed = JSON.parse(staleAuth);
+            // If the stored version doesn't match, wipe it
+            if (parsed?.version !== 1) {
+              localStorage.removeItem('bs-auth');
+            }
+          } catch {
+            localStorage.removeItem('bs-auth');
+          }
+        }
+      } catch {
+        // Silent fail — cleanup is best-effort
+      }
+    };
+
+    cleanup();
+  }, []);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -31,9 +81,16 @@ export default function LoginPage() {
       setIsLoading(true);
 
       try {
-        const res = await fetch('/api/auth/login', {
+        // Add cache-busting timestamp to prevent any proxy/SW from serving cached response
+        const loginUrl = `/api/auth/login?_t=${Date.now()}`;
+        const res = await fetch(loginUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+          credentials: 'include', // Explicitly include cookies
           body: JSON.stringify({
             username: username.trim(),
             password,
@@ -47,6 +104,7 @@ export default function LoginPage() {
           return;
         }
 
+        // Store auth in Zustand (persists to localStorage)
         setAuth({
           id: data.user.id,
           username: data.user.username,
@@ -54,12 +112,12 @@ export default function LoginPage() {
           role: data.user.role,
         });
 
-        // Full page reload to ensure the new bs-session cookie is
-        // processed by the browser before any API calls are made.
-        // Using router.push('/') causes a race condition where the old
-        // expired cookie is sent with the first API request → 401 loop.
-        window.location.href = '/';
-      } catch {
+        // Full page reload with cache-busting to ensure:
+        // 1. The new bs-session cookie is sent with all requests
+        // 2. No stale JS bundles are loaded from cache
+        // 3. The middleware sees the fresh cookie
+        window.location.href = `/?_v=${BUILD_VERSION}`;
+      } catch (err) {
         setError('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.');
       } finally {
         setIsLoading(false);
