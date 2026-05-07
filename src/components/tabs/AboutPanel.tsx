@@ -3,7 +3,8 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Info, Building2 } from 'lucide-react';
+import { Info } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AboutPanel() {
   const currentYear = new Date().getFullYear();
@@ -14,8 +15,15 @@ export default function AboutPanel() {
       <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
         <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 p-8 text-center text-white">
           {/* App Logo/Icon */}
-          <div className="mx-auto mb-5 w-24 h-24 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shadow-lg">
-            <Building2 className="h-14 w-14 text-white" />
+          <div className="mx-auto mb-5 w-28 h-28">
+            <Image
+              src="/logo-circle.png"
+              alt="B.S Evaluation"
+              width={112}
+              height={112}
+              className="rounded-2xl shadow-lg"
+              priority
+            />
           </div>
 
           {/* App Name */}

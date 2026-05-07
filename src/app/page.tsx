@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import Image from 'next/image';
 import {
   Building2,
   FileText,
@@ -345,7 +346,13 @@ export default function HomePage() {
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
-            <Building2 className="w-6 h-6 sm:w-7 sm:h-7 shrink-0" />
+            <Image
+              src="/logo-header.png"
+              alt="B.S"
+              width={28}
+              height={28}
+              className="rounded shrink-0"
+            />
             <div>
               <h1 className="text-sm sm:text-lg font-bold leading-tight">B.S Evaluation</h1>
               <p className="text-[10px] sm:text-xs opacity-80 leading-tight hidden sm:block">{t.appSubtitle}</p>

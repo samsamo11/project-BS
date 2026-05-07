@@ -4,7 +4,7 @@
  * API requests are NEVER cached to avoid stale auth data
  */
 
-const STATIC_CACHE = 'bs-static-v2';
+const STATIC_CACHE = 'bs-static-v3';
 
 // Static assets to pre-cache
 const PRECACHE_URLS = [
@@ -12,6 +12,11 @@ const PRECACHE_URLS = [
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/logo.svg',
+  '/logo.png',
+  '/logo-circle.png',
+  '/logo-header.png',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
 ];
 
 // Install: pre-cache essential static assets

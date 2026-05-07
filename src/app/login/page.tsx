@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,8 +96,15 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* App Logo & Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg mb-4">
-            <Building2 className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <Image
+              src="/logo-circle.png"
+              alt="B.S Evaluation"
+              width={80}
+              height={80}
+              className="rounded-2xl shadow-lg"
+              priority
+            />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
             B.S Evaluation
@@ -199,7 +207,6 @@ export default function LoginPage() {
             المهندس الاستشاري المدني: بشار السليمان
           </p>
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-1.5">
-            <Building2 className="w-3.5 h-3.5 text-white/60" />
             <span className="text-white/60 text-xs">
               الكود العربي السوري نسخة 2024
             </span>
