@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FileOutput, Printer } from 'lucide-react';
 
 interface GenerateReportsProps {
-  projectData: Record<string, Record<string, unknown>>;
+  projectData: Record<string, unknown>;
 }
 
 interface ReportType {
@@ -173,7 +173,11 @@ export default function GenerateReports({ projectData }: GenerateReportsProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
   const getSectionData = (dataKey: string): Record<string, unknown> => {
-    return projectData[dataKey] || {};
+    const data = projectData[dataKey];
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      return data as Record<string, unknown>;
+    }
+    return {};
   };
 
   const hasDataForSection = (dataKey: string): boolean => {

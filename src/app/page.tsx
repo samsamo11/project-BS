@@ -179,7 +179,7 @@ export default function HomePage() {
         loadProjectData(projectId);
         // Optimistic update: reflect is_current in local project list
         setProjects(
-          (useProjectStore.getState().projects || []).map((p: { id: string; is_current: boolean }) => ({
+          (useProjectStore.getState().projects || []).map((p) => ({
             ...p,
             is_current: p.id === projectId,
           }))
@@ -304,7 +304,7 @@ export default function HomePage() {
       case 'finalReport':
         return <FinalReport data={projectData.final_report} onSave={(d) => { updateProjectData('final_report', d); saveCurrentTab('final_report', d); }} />;
       case 'pdfExport':
-        return <GenerateReports projectData={projectData} />;
+        return <GenerateReports projectData={projectData as unknown as Record<string, unknown>} />;
       case 'settings':
         return <SettingsPanel />;
       case 'about':
@@ -360,7 +360,7 @@ export default function HomePage() {
                 onClick={() => router.push('/admin')}
               >
                 <Shield className="w-4 h-4 ms-1" />
-                <span className="hidden sm:inline">{t.admin}</span>
+                <span className="hidden sm:inline">{t.userManagement}</span>
               </Button>
             )}
 

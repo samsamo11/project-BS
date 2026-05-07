@@ -39,7 +39,7 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
     }
-    const value = (_supabase as Record<string | symbol, unknown>)[prop];
+    const value = (_supabase as unknown as Record<string | symbol, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(_supabase);
     }
@@ -55,7 +55,7 @@ export const supabaseAdmin: SupabaseClient = new Proxy({} as SupabaseClient, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
     }
-    const value = (_supabaseAdmin as Record<string | symbol, unknown>)[prop];
+    const value = (_supabaseAdmin as unknown as Record<string | symbol, unknown>)[prop];
     if (typeof value === 'function') {
       return value.bind(_supabaseAdmin);
     }

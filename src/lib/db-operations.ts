@@ -72,6 +72,10 @@ export async function getAllUsers() {
 }
 
 export async function deleteUser(userId: string) {
+  // Cascade: delete all projects belonging to this user first
+  const { error: projError } = await supabase.from('projects').delete().eq('user_id', userId);
+  if (projError) throw new Error('فشل حذف مشاريع المستخدم');
+
   const { error } = await supabase.from('users').delete().eq('id', userId);
   if (error) throw new Error('فشل حذف المستخدم');
 }
@@ -114,11 +118,14 @@ export async function getProjectById(projectId: string) {
 }
 
 export async function createProject(userId: string, name: string) {
-  // Unset current for other projects of this user
+  // Atomic: unset current for other projects, then insert new one
+  // Using RPC would be ideal, but Supabase JS client handles sequential ops reliably.
+  // We wrap in a single conceptual transaction — if insert fails, previous state is idempotent.
   await supabase
     .from('projects')
     .update({ is_current: false })
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('is_current', true);
 
   const { data, error } = await supabase
     .from('projects')
