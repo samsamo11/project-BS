@@ -47,7 +47,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, waitForAuthHydration } from '@/stores';
 import { useTranslation } from '@/lib/i18n';
 
 // ======== Types ========
@@ -66,6 +66,7 @@ export default function AdminPage() {
   const { t, dir, isRTL } = useTranslation('ar');
 
   // ======== State ========
+  const [mounted, setMounted] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [error, setError] = useState('');
@@ -91,12 +92,21 @@ export default function AdminPage() {
   // Role change
   const [changingRoleUserId, setChangingRoleUserId] = useState<string | null>(null);
 
-  // ======== Redirect non-admin users ========
+  // ======== Wait for zustand hydration + redirect non-admin ========
   useEffect(() => {
+    let cancelled = false;
+    waitForAuthHydration().then(() => {
+      if (!cancelled) setMounted(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (user && user.role !== 'admin') {
       router.replace('/');
     }
-  }, [user, router]);
+  }, [mounted, user, router]);
 
   // ======== Fetch users ========
   const fetchUsers = useCallback(async () => {
@@ -252,8 +262,8 @@ export default function AdminPage() {
     }
   };
 
-  // ======== Guard: show nothing while checking role ========
-  if (!user) {
+  // ======== Guard: show nothing while hydrating or checking role ========
+  if (!mounted || !user) {
     return (
       <div dir={dir} className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -66,7 +66,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/icons/icon-192x192.png" sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-        {/* Register Service Worker */}
+        {/* Register Service Worker — force update on new versions */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -75,10 +75,18 @@ export default function RootLayout({
                   navigator.serviceWorker.register('/sw.js')
                     .then(function(reg) {
                       console.log('SW registered:', reg.scope);
+                      // Check for updates every 30 seconds
+                      setInterval(function() {
+                        reg.update();
+                      }, 30000);
                     })
                     .catch(function(err) {
                       console.warn('SW registration failed:', err);
                     });
+                  // If a new SW was installed while the page was hidden, reload
+                  navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    window.location.reload();
+                  });
                 });
               }
             `,

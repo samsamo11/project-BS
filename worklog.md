@@ -88,3 +88,38 @@ Stage Summary:
 - PWA manifest now includes apple-touch-icon (180x180)
 - Service worker cache bumped to v3 with new asset pre-cache list
 - Login page, About panel, and main page sidebar now display the actual B.S Evaluation logo
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix login session immediately dropping and mobile deployment error
+
+Work Log:
+- Investigated auth flow: login → setAuth() → window.location.href('/') → page mount → check auth → redirect
+- Found ROOT CAUSE #1: Zustand persist hydration race condition
+  - Zustand v5 uses async rehydration, but page.tsx checked isAuthenticated BEFORE rehydration completed
+  - Result: isAuthenticated=false (default) → immediate redirect to /login
+- Found ROOT CAUSE #2: Cookie secure flag
+  - `secure: process.env.NODE_ENV === 'production'` → in production, cookie gets Secure flag
+  - Caddy serves over HTTP (port 81) without TLS → browser silently rejects Secure cookies
+  - Login "succeeds" but cookie never stored → logged out immediately
+- Found ROOT CAUSE #3: /api/auth/me clears session on ANY DB error
+  - If Supabase has a transient error, session cookie is destroyed permanently
+
+Fixes applied:
+1. stores/index.ts: Added waitForAuthHydration() helper using zustand's hasHydrated() + onFinishHydration()
+2. page.tsx: Changed mount effect to await zustand hydration before reading isAuthenticated
+3. admin/page.tsx: Same hydration fix for admin page
+4. auth.ts: Changed secure flag to `false` in clearSessionResponse()
+5. login/route.ts: Changed secure flag to `false` (always) with comment explaining why
+6. auth/me/route.ts: Only clear session if user explicitly not found (null), not on DB errors
+7. layout.tsx: Added SW auto-update check (every 30s) + controllerchange reload
+
+Build: 0 TypeScript errors, all checks passed
+Verification: Login API returns 200 with bs-session cookie (no Secure flag), all pages and assets serve correctly
+
+Stage Summary:
+- Login session persistence: FIXED (hydration race condition resolved)
+- Cookie over HTTP: FIXED (secure flag permanently set to false)
+- Mobile deployment error: FIXED (SW cache v3 + auto-update mechanism)
+- DB error handling: FIXED (no longer kills sessions on transient errors)

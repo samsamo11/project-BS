@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore, useProjectStore, useUIStore } from '@/stores';
+import { useAuthStore, useProjectStore, useUIStore, waitForAuthHydration } from '@/stores';
 import { useTranslation } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -89,8 +89,15 @@ export default function HomePage() {
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
 
+  // Wait for zustand persist rehydration before reading auth state.
+  // This prevents a race condition where isAuthenticated defaults to false
+  // and redirects to /login before localStorage values are loaded.
   useEffect(() => {
-    setMounted(true);
+    let cancelled = false;
+    waitForAuthHydration().then(() => {
+      if (!cancelled) setMounted(true);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   // Validate session with the server on mount.

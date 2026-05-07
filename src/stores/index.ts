@@ -50,9 +50,28 @@ export const useAuthStore = create<AuthState>()(
         }
         return persisted as AuthState;
       },
+      // Ensure rehydration completes before components read auth state
+      onRehydrateStorage: () => (state) => {
+        // Called when rehydration finishes — no action needed,
+        // but hasHydrated() will now return true
+      },
     }
   )
 );
+
+/**
+ * Returns a Promise that resolves when the auth store has rehydrated from localStorage.
+ * Components should await this before reading isAuthenticated.
+ */
+export function waitForAuthHydration(): Promise<void> {
+  if (useAuthStore.persist.hasHydrated()) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+  });
+}
 
 // ======== Settings Store ========
 interface SettingsState {

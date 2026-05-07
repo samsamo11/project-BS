@@ -12,9 +12,17 @@ export async function GET() {
     let user: { id: string; username: string; full_name: string; role: string };
     try {
       user = await getUserById(session.userId);
-    } catch {
-      // User was deleted from DB but JWT is still valid — clear the session
-      return clearSessionResponse('الجلسة منتهية، يرجى تسجيل الدخول مجدداً', 401);
+      if (!user) {
+        // User was explicitly deleted from DB — clear the session
+        return clearSessionResponse('الجلسة منتهية، يرجى تسجيل الدخول مجدداً', 401);
+      }
+    } catch (err) {
+      // DB/timeout error — do NOT clear the session, return 500 instead
+      console.error('[/api/auth/me] DB error:', err);
+      return NextResponse.json(
+        { error: 'خطأ مؤقت في التحقق من الجلسة، يرجى المحاولة لاحقاً' },
+        { status: 500, headers: { 'Cache-Control': 'no-store' } }
+      );
     }
 
     return NextResponse.json({
