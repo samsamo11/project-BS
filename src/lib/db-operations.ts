@@ -90,6 +90,15 @@ export async function changePassword(userId: string, newPassword: string) {
   if (error) throw new Error('فشل تغيير كلمة المرور');
 }
 
+export async function updateUserRole(userId: string, newRole: 'admin' | 'user') {
+  const { error } = await supabase
+    .from('users')
+    .update({ role: newRole })
+    .eq('id', userId);
+
+  if (error) throw new Error('فشل تحديث دور المستخدم');
+}
+
 // ======== Project Operations ========
 export async function getProjects(userId: string, isAdmin: boolean = false) {
   let query = supabase

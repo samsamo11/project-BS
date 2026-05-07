@@ -54,7 +54,11 @@ export default function LoginPage() {
           role: data.user.role,
         });
 
-        router.push('/');
+        // Full page reload to ensure the new bs-session cookie is
+        // processed by the browser before any API calls are made.
+        // Using router.push('/') causes a race condition where the old
+        // expired cookie is sent with the first API request → 401 loop.
+        window.location.href = '/';
       } catch {
         setError('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.');
       } finally {

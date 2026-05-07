@@ -1,6 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import { deleteUser } from '@/lib/db-operations';
+import { deleteUser, updateUserRole } from '@/lib/db-operations';
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireAdmin();
+    const { id } = await params;
+    const { role } = await request.json();
+
+    // Prevent admin from changing their own role (would cause lockout)
+    if (session.userId === id) {
+      return NextResponse.json(
+        { error: 'لا يمكنك تغيير دور حسابك الخاص' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    // Validate role value
+    if (role !== 'admin' && role !== 'user') {
+      return NextResponse.json(
+        { error: 'الدور يجب أن يكون admin أو user' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    await updateUserRole(id, role);
+    return NextResponse.json(
+      { success: true, message: 'تم تحديث الدور بنجاح' },
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Forbidden') {
+      return NextResponse.json({ error: message }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+    }
+    return NextResponse.json({ error: message }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
+  }
+}
 
 export async function DELETE(
   _request: NextRequest,

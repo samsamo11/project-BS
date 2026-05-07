@@ -13,6 +13,8 @@ import {
   Users,
   RefreshCw,
   AlertCircle,
+  KeyRound,
+  UserCog,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -80,6 +82,14 @@ export default function AdminPage() {
   // Delete confirmations
   const [deleteUserTarget, setDeleteUserTarget] = useState<User | null>(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // Reset password dialog
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Role change
+  const [changingRoleUserId, setChangingRoleUserId] = useState<string | null>(null);
 
   // ======== Redirect non-admin users ========
   useEffect(() => {
@@ -169,6 +179,55 @@ export default function AdminPage() {
     }
   };
 
+  // ======== Change user role ========
+  const handleToggleRole = async (targetUser: User) => {
+    const newRole = targetUser.role === 'admin' ? 'user' : 'admin';
+    setChangingRoleUserId(targetUser.id);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'فشل في تغيير الدور');
+        return;
+      }
+      await fetchUsers();
+    } catch {
+      setError('تعذر الاتصال بالخادم');
+    } finally {
+      setChangingRoleUserId(null);
+    }
+  };
+
+  // ======== Reset user password ========
+  const handleResetPassword = async () => {
+    if (!resetPasswordTarget || !newPassword.trim()) return;
+    setIsResettingPassword(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/users/${resetPasswordTarget.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newPassword.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'فشل في إعادة تعيين كلمة المرور');
+        return;
+      }
+      setResetPasswordTarget(null);
+      setNewPassword('');
+    } catch {
+      setError('تعذر الاتصال بالخادم');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   // ======== Logout ========
   const handleLogout = async () => {
     try {
@@ -177,7 +236,7 @@ export default function AdminPage() {
       // ignore
     }
     clearAuth();
-    router.replace('/login');
+    window.location.href = '/login';
   };
 
   // ======== Format date ========
@@ -406,6 +465,34 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Role Toggle */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleToggleRole(u)}
+                            disabled={u.id === user.id || changingRoleUserId === u.id}
+                            title={u.id === user.id ? 'لا يمكنك تغيير دورك' : u.role === 'admin' ? 'تحويل إلى مستخدم عادي' : 'ترقية إلى مشرف'}
+                            className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-30"
+                          >
+                            {changingRoleUserId === u.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <UserCog className="w-4 h-4" />
+                            }
+                          </Button>
+
+                          {/* Reset Password */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setResetPasswordTarget(u); setNewPassword(''); }}
+                            disabled={u.id === user.id}
+                            title={u.id === user.id ? 'لا يمكنك تغيير كلمة مرورك من هنا' : 'إعادة تعيين كلمة المرور'}
+                            className="h-8 w-8 text-amber-500 hover:text-amber-700 hover:bg-amber-50 disabled:opacity-30"
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+
+                          {/* Delete User */}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -562,6 +649,73 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ======== Reset Password Dialog ======== */}
+      <Dialog open={!!resetPasswordTarget} onOpenChange={(open) => {
+        if (!open) { setResetPasswordTarget(null); setNewPassword(''); }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gray-800">
+              <KeyRound className="w-5 h-5 text-amber-600" />
+              إعادة تعيين كلمة المرور
+            </DialogTitle>
+            <DialogDescription>
+              تعيين كلمة مرور جديدة للمستخدم{' '}
+              <span className="font-bold text-gray-800">{resetPasswordTarget?.fullName}</span>
+              {' '}({resetPasswordTarget?.username})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reset-password" className="font-medium">
+                كلمة المرور الجديدة
+              </Label>
+              <Input
+                id="reset-password"
+                type="password"
+                placeholder="8 أحرف على الأقل"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={isResettingPassword}
+                className="text-right"
+                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+              />
+              <p className="text-xs text-gray-500">
+                يجب أن تكون 8 أحرف على الأقل و 128 حرف كحد أقصى
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => { setResetPasswordTarget(null); setNewPassword(''); }}
+              disabled={isResettingPassword}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={isResettingPassword || newPassword.trim().length < 8}
+              className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {isResettingPassword ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  جاري التعيين...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="w-4 h-4" />
+                  تعيين كلمة المرور
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

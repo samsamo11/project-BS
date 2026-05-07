@@ -1,15 +1,13 @@
 /**
- * B.S Evaluation — Service Worker
- * Handles: caching strategy for offline support
+ * B.S Evaluation — Service Worker v2
+ * Handles: offline caching for static assets ONLY
+ * API requests are NEVER cached to avoid stale auth data
  */
 
-const CACHE_NAME = 'bs-evaluation-v1';
-const STATIC_CACHE = 'bs-static-v1';
-const API_CACHE = 'bs-api-v1';
+const STATIC_CACHE = 'bs-static-v2';
 
 // Static assets to pre-cache
 const PRECACHE_URLS = [
-  '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
@@ -26,13 +24,13 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate: clean up old caches
+// Activate: clean up ALL old caches (forces full refresh)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== API_CACHE)
+          .filter((name) => name !== STATIC_CACHE)
           .map((name) => caches.delete(name))
       );
     })
@@ -40,32 +38,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static assets
+// Fetch: caching strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') return;
-
-  // API requests: Network First
+  // NEVER cache API requests — always go to network
+  // This prevents stale auth data and 401 loops
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      caches.open(API_CACHE).then((cache) => {
-        return fetch(request)
-          .then((response) => {
-            // Cache successful responses for 5 minutes
-            if (response.ok) {
-              cache.put(request, response.clone());
-            }
-            return response;
-          })
-          .catch(() => {
-            // Fallback to cache when offline
-            return cache.match(request);
-          });
-      })
-    );
     return;
   }
 
@@ -97,19 +77,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App pages: Stale While Revalidate
+  // App pages: Network First (always try fresh content)
   event.respondWith(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.match(request).then((cached) => {
-        const fetchPromise = fetch(request).then((response) => {
-          if (response.ok) {
-            cache.put(request, response.clone());
-          }
-          return response;
-        }).catch(() => cached);
-
-        return cached || fetchPromise;
-      });
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const cache = caches.open(STATIC_CACHE);
+          cache.then((c) => c.put(request, response.clone()));
+        }
+        return response;
+      })
+      .catch(() => {
+        // Offline fallback: serve from cache
+        return caches.open(STATIC_CACHE).then((cache) => {
+          return cache.match(request).then((cached) => {
+            return cached || new Response('Offline', { status: 503 });
+          });
+        });
+      })
   );
 });

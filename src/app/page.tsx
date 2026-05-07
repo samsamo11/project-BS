@@ -92,11 +92,25 @@ export default function HomePage() {
     setMounted(true);
   }, []);
 
+  // Validate session with the server on mount.
+  // This catches cases where localStorage says isAuthenticated=true
+  // but the JWT cookie has expired or been invalidated.
   useEffect(() => {
-    if (mounted && !isAuthenticated) {
+    if (!mounted) return;
+    if (!isAuthenticated) {
       router.push('/login');
+      return;
     }
-  }, [mounted, isAuthenticated, router]);
+    // Server-side validation: verify the cookie is still valid
+    fetch('/api/auth/me').then((res) => {
+      if (res.status === 401) {
+        clearAuth();
+        router.push('/login');
+      }
+    }).catch(() => {
+      // Network error — keep existing state, will retry on next API call
+    });
+  }, [mounted, isAuthenticated, clearAuth, router]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -237,7 +251,8 @@ export default function HomePage() {
       // silent
     }
     clearAuth();
-    router.push('/login');
+    // Full reload to ensure cookie is cleared and SW cache is bypassed
+    window.location.href = '/login';
   };
 
   // Auto-save project data
