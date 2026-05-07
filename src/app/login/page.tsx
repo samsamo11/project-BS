@@ -2,8 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
-import Image from 'next/image';
+import { Building2, Shield, Lock, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -96,15 +95,8 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* App Logo & Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center mb-4">
-            <Image
-              src="/logo-circle.png"
-              alt="B.S Evaluation"
-              width={80}
-              height={80}
-              className="rounded-2xl shadow-lg"
-              priority
-            />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg mb-4">
+            <Building2 className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
             B.S Evaluation
