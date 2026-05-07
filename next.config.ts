@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: false,
-  turbopack: {},
 
   // PWA headers for service worker and manifest
   async headers() {

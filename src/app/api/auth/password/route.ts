@@ -86,7 +86,7 @@ export async function PUT(request: NextRequest) {
     // Replace the old cookie with the new token
     response.cookies.set('bs-session', newToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Must match the login cookie setting
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
