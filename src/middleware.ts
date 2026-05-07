@@ -15,15 +15,34 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths without authentication
   if (publicPaths.some(p => pathname === p)) {
-    return NextResponse.next();
+    const resp = NextResponse.next();
+    resp.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    resp.headers.set('Pragma', 'no-cache');
+    resp.headers.set('Expires', '0');
+    return resp;
   }
 
-  // Allow Next.js internals and static files
+  // Allow static files (icons, manifest, favicon, robots, etc.)
   if (
     pathname.startsWith('/_next/') ||
-    pathname.startsWith('/favicon')
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/icon-') ||
+    pathname.startsWith('/logo') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.webp')
   ) {
-    return NextResponse.next();
+    const resp = NextResponse.next();
+    // Cache static assets but with revalidation to pick up new builds
+    if (pathname.startsWith('/_next/static/')) {
+      resp.headers.set('Cache-Control', 'public, max-age=3600, must-revalidate');
+    } else {
+      resp.headers.set('Cache-Control', 'no-store');
+    }
+    return resp;
   }
 
   // Allow public API endpoints
@@ -64,7 +83,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl);
     }
 
-    return NextResponse.next();
+    const resp = NextResponse.next();
+    resp.headers.set('Cache-Control', 'no-store');
+    return resp;
   } catch {
     // Token is invalid or expired
     if (pathname.startsWith('/api/')) {
