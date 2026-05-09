@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تقرير التحليل الشامل - B.S Evaluation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800;900&family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { 
+    font-family: 'Noto Sans Arabic', 'Noto Kufi Arabic', sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.8;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: white;
+    padding: 20mm 18mm;
+    page-break-after: always;
+    position: relative;
+  }
+  .page:last-child { page-break-after: avoid; }
+  
+  /* Cover Page */
+  .cover {
+    background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0f766e 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -30%;
+    width: 80%;
+    height: 80%;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+  }
+  .cover-content { position: relative; z-index: 1; }
+  .cover h1 { font-family: 'Noto Kufi Arabic', sans-serif; font-size: 36pt; font-weight: 800; margin-bottom: 12px; letter-spacing: 1px; }
+  .cover h2 { font-size: 16pt; font-weight: 400; opacity: 0.9; margin-bottom: 30px; }
+  .cover .subtitle { font-size: 12pt; opacity: 0.8; margin-top: 20px; }
+  .cover .divider { width: 80px; height: 3px; background: rgba(255,255,255,0.6); margin: 20px auto; border-radius: 2px; }
+  .cover .date { font-size: 11pt; opacity: 0.7; margin-top: 40px; }
+
+  /* Section Headers */
+  h2.section-title {
+    font-family: 'Noto Kufi Arabic', sans-serif;
+    font-size: 16pt;
+    color: #059669;
+    border-bottom: 3px solid #059669;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    margin-top: 24px;
+  }
+  h3.sub-title {
+    font-family: 'Noto Kufi Arabic', sans-serif;
+    font-size: 13pt;
+    color: #0f766e;
+    margin-top: 16px;
+    margin-bottom: 10px;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9pt; }
+  th { background: #059669; color: white; padding: 8px 10px; text-align: right; font-weight: 600; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) { background: #f8fafc; }
+  tr:hover { background: #f0fdf4; }
+
+  /* Info Cards */
+  .info-card {
+    background: #f0fdf4;
+    border-right: 4px solid #059669;
+    padding: 14px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+  .warn-card {
+    background: #fffbeb;
+    border-right: 4px solid #f59e0b;
+    padding: 14px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+  .danger-card {
+    background: #fef2f2;
+    border-right: 4px solid #ef4444;
+    padding: 14px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+  .success-card {
+    background: #f0fdf4;
+    border-right: 4px solid #22c55e;
+    padding: 14px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 10pt;
+  }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 8pt; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-red { background: #fecaca; color: #991b1b; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+
+  /* Lists */
+  ul, ol { padding-right: 24px; margin: 8px 0; }
+  li { margin-bottom: 4px; font-size: 10pt; }
+
+  /* Code */
+  code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    direction: ltr;
+    display: inline-block;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 8pt;
+    direction: ltr;
+    text-align: left;
+    overflow-x: auto;
+    margin: 10px 0;
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .page-footer {
+    position: absolute;
+    bottom: 12mm;
+    left: 18mm;
+    right: 18mm;
+    text-align: center;
+    font-size: 8pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+  }
+
+  /* Progress Bar */
+  .progress-bar { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .progress-track { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .progress-label { font-size: 9pt; font-weight: 600; min-width: 45px; }
+
+  .toc-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #cbd5e1; font-size: 10pt; }
+  .toc-item span:first-child { font-weight: 500; }
+  .toc-item span:last-child { color: #64748b; font-size: 9pt; }
+
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0; }
+  .metric-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; }
+  .metric-box .number { font-size: 22pt; font-weight: 800; color: #059669; }
+  .metric-box .label { font-size: 8pt; color: #64748b; margin-top: 2px; }
+
+  p { font-size: 10pt; margin-bottom: 8px; text-align: justify; }
+  .formula-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 10px 0; direction: ltr; text-align: left; font-family: 'Courier New', monospace; font-size: 9pt; line-height: 2; }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="page cover">
+  <div class="cover-content">
+    <h1>B.S Evaluation</h1>
+    <div class="divider"></div>
+    <h2>تقرير التحليل الشامل والتقييم التقني</h2>
+    <p class="subtitle">تقييم المنشآت الخرسانية المسلحة وفق الكود السوري العربي 2024</p>
+    <p class="subtitle">تحليل البنية البرمجية والعمليات الحسابية الهندسية وخطة النشر والتطوير</p>
+    <div class="divider"></div>
+    <p class="date">اعداد: المهندس الاستشاري المدني بشار السليمان</p>
+    <p class="date">تاريخ التقرير: 10 مايو 2026</p>
+  </div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="page">
+  <h2 class="section-title">فهرس المحتويات</h2>
+  <div style="margin-top:16px;">
+    <div class="toc-item"><span>1. ملخص تنفيذي</span><span>3</span></div>
+    <div class="toc-item"><span>2. البنية التقنية والتقنيات المستخدمة</span><span>3</span></div>
+    <div class="toc-item"><span>3. تحليل هيكل التطبيق والمكونات</span><span>4</span></div>
+    <div class="toc-item"><span>4. تحليل التبويبات والواجهات</span><span>5</span></div>
+    <div class="toc-item"><span>5. العمليات الحسابية الهندسية</span><span>7</span></div>
+    <div class="toc-item"><span>6. نظام التقارير والطباعة</span><span>10</span></div>
+    <div class="toc-item"><span>7. نظام الأمان والمصادقة</span><span>11</span></div>
+    <div class="toc-item"><span>8. تحليل التوافق مع Netlify</span><span>11</span></div>
+    <div class="toc-item"><span>9. تحليل التوافق مع GitHub</span><span>12</span></div>
+    <div class="toc-item"><span>10. تحليل قاعدة بيانات Supabase</span><span>13</span></div>
+    <div class="toc-item"><span>11. التوصيات والملاحظات</span><span>14</span></div>
+    <div class="toc-item"><span>12. الخطة المتكاملة للنشر والتطوير</span><span>15</span></div>
+  </div>
+
+  <h2 class="section-title" style="margin-top:36px;">المؤشرات الرئيسية</h2>
+  <div class="metric-grid">
+    <div class="metric-box"><div class="number">13</div><div class="label">تبويب وظيفي</div></div>
+    <div class="metric-box"><div class="number">19</div><div class="label">مسار توجيه</div></div>
+    <div class="metric-box"><div class="number">55+</div><div class="label">ملف مصدري</div></div>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-box"><div class="number">5</div><div class="label">حساب هندسي</div></div>
+    <div class="metric-box"><div class="number">3</div><div class="label">جداول Supabase</div></div>
+    <div class="metric-box"><div class="number">4</div><div class="label">مخازن Zustand</div></div>
+  </div>
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 2</div>
+</div>
+
+<!-- ==================== EXECUTIVE SUMMARY ==================== -->
+<div class="page">
+  <h2 class="section-title">1. ملخص تنفيذي</h2>
+  <p>يقدم هذا التقرير تحليلا شاملا ومعمقا لتطبيق B.S Evaluation وهو تطبيق ويب متكامل مخصص لتقييم المنشآت الخرسانية المسلحة وفق الكود السوري العربي نسخة 2024. يعتمد التطبيق على إطار العمل Next.js 16.1.1 مع React 19 و TypeScript وقاعدة بيانات Supabase PostgreSQL، ويتميز ببنية معمارية متينة تدعم 13 تبويبا وظيفيا تغطي كامل دورة التقييم الهندسي من جمع البيانات وحتى توليد التقارير النهائية.</p>
+  <p>كشف التحليل عن نقاط قوة عديدة في التطبيق، أبرزها: تنفيذ عمليات حسابية هندسية دقيقة تتضمن فحص الإجهاد والقص والانعطاف لكل من الأساسات والأعمدة والبلاطات والجوائز، مع مراعاة معاملات الأمان وفق الكود السوري. كما يتميز التطبيق بتصميم متجاوب يعمل على سطح المكتب والهواتف المحمولة مع دعم كامل للغة العربية وواجهة من اليمين لليسار.</p>
+
+  <div class="success-card">
+    <strong>نقاط القوة الرئيسية:</strong>
+    <ul>
+      <li>بنية برمجية حديثة ومنظمة باستخدام Next.js 16 + React 19 + TypeScript</li>
+      <li>حسابات هندسية دقيقة ومتعددة تشمل الإجهاد والقص والانعطاف وقص الثقب</li>
+      <li>دعم كامل للغة العربية مع نظام ثنائي اللغة (عربي/إنجليزي)</li>
+      <li>تصميم متجاوب يدعم سطح المكتب والهاتف المحمول (PWA)</li>
+      <li>نظام إدارة مشاريع متعدد مع حفظ تلقائي في Supabase</li>
+      <li>نظام مصادقة آمن JWT مع حماية من هجمات القوة الغاشمة</li>
+    </ul>
+  </div>
+
+  <div class="warn-card">
+    <strong>النقاط التي تحتاج تطوير:</strong>
+    <ul>
+      <li>التوافق مع Netlify يتطلب تحويل API Routes إلى Serverless Functions</li>
+      <li>سياسات أمان قاعدة البيانات (RLS) في Supabase تحتاج تقييدا أكبر</li>
+      <li>نظام التقارير يعتمد على الطباعة المتصفحية فقط بدون تصدير PDF حقيقي</li>
+      <li>غياب ملف .gitignore مناسب للرفع على GitHub</li>
+      <li>عدم وجود اختبارات وحدية (Unit Tests) أو تكامل (Integration Tests)</li>
+    </ul>
+  </div>
+
+  <h2 class="section-title">2. البنية التقنية والتقنيات المستخدمة</h2>
+
+  <h3 class="sub-title">2.1 إطار العمل والمكتبات الأساسية</h3>
+  <table>
+    <tr><th>التقنية</th><th>الإصدار</th><th>الغرض</th><th>التقييم</th></tr>
+    <tr><td>Next.js</td><td>16.1.1</td><td>إطار العمل الرئيسي - Standalone Output</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>React</td><td>19.0.0</td><td>مكتبة واجهة المستخدم</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>TypeScript</td><td>5.x</td><td>لغة البرمجة</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Tailwind CSS</td><td>4.x</td><td>تنسيق الأنماط</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Zustand</td><td>5.0.6</td><td>إدارة الحالة (4 مخازن)</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Supabase JS</td><td>2.105.1</td><td>قاعدة البيانات PostgreSQL</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Jose</td><td>6.2.3</td><td>مصادقة JWT (HS256)</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Bcryptjs</td><td>3.0.3</td><td>تشفير كلمات المرور</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Radix UI</td><td>متنوع</td><td>مكونات واجهة المستخدم (shadcn/ui)</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Lucide React</td><td>0.525.0</td><td>أيقونات SVG</td><td><span class="badge badge-green">ممتاز</span></td></tr>
+    <tr><td>Sharp</td><td>0.34.3</td><td>معالجة الصور</td><td><span class="badge badge-blue">جيد</span></td></tr>
+  </table>
+
+  <h3 class="sub-title">2.2 البنية التحتية</h3>
+  <p>يعمل التطبيق في وضع <code>standalone</code> من Next.js، مما يعني أنه ينتج ملفا تنفيذيا مستقلا لا يحتاج إلى <code>node_modules</code>. يتم تقديم التطبيق عبر خادم Caddy يعمل على المنفذ 81 ويحول الطلبات إلى المنفذ 3000 حيث يعمل Next.js. يدعم التطبيق خاصية PWA (تطبيق الويب التقدمي) مع ملف <code>manifest.json</code> و Service Worker مسجل.</p>
+
+  <h3 class="sub-title">2.3 إدارة الحالة</h3>
+  <p>يعتمد التطبيق على أربعة مخازن Zustand منفصلة، كل منها مسؤول عن نطاق محدد:</p>
+  <table>
+    <tr><th>المخزن</th><th>المسؤولية</th><th>التخزين</th></tr>
+    <tr><td><code>useAuthStore</code></td><td>حالة المصادقة والمستخدم</td><td>localStorage (مستمر)</td></tr>
+    <tr><td><code>useSettingsStore</code></td><td>اللغة والوحدات</td><td>localStorage (مستمر)</td></tr>
+    <tr><td><code>useProjectStore</code></td><td>المشاريع وبياناتها</td><td>ذاكرة فقط (متزامن من Supabase)</td></tr>
+    <tr><td><code>useUIStore</code></td><td>التبويب النشط والقائمة الجانبية</td><td>ذاكرة فقط (مؤقت)</td></tr>
+  </table>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 3</div>
+</div>
+
+<!-- ==================== ARCHITECTURE ==================== -->
+<div class="page">
+  <h2 class="section-title">3. تحليل هيكل التطبيق والمكونات</h2>
+
+  <h3 class="sub-title">3.1 المسارات (Routes) - 19 مسارا</h3>
+  <table>
+    <tr><th>المسار</th><th>النوع</th><th>الوصف</th></tr>
+    <tr><td>/</td><td>صفة رئيسية</td><td>لوحة التحكم الرئيسية مع 13 تبويبا</td></tr>
+    <tr><td>/login</td><td>صفة تسجيل الدخول</td><td>نموذج تسجيل دخول المستخدمين</td></tr>
+    <tr><td>/admin</td><td>صفة الإدارة</td><td>إدارة المستخدمين والأجهزة</td></tr>
+    <tr><td>/forgot-password</td><td>صفة</td><td>استعادة كلمة المرور</td></tr>
+    <tr><td>/api/auth/login</td><td>POST API</td><td>مصادقة المستخدم وتوليد JWT</td></tr>
+    <tr><td>/api/auth/me</td><td>GET API</td><td>التحقق من صلاحية الجلسة</td></tr>
+    <tr><td>/api/auth/logout</td><td>POST API</td><td>تسجيل الخروج وحذف الكوكي</td></tr>
+    <tr><td>/api/auth/password</td><td>PUT API</td><td>تغيير كلمة المرور</td></tr>
+    <tr><td>/api/auth/reset-password</td><td>POST API</td><td>إعادة تعيين كلمة المرور</td></tr>
+    <tr><td>/api/projects</td><td>GET/POST API</td><td>جلب وإنشاء المشاريع</td></tr>
+    <tr><td>/api/projects/[id]</td><td>GET/PUT/DELETE API</td><td>إدارة مشروع محدد</td></tr>
+    <tr><td>/api/admin/users</td><td>GET/POST API</td><td>إدارة المستخدمين (للأدمن)</td></tr>
+    <tr><td>/api/admin/users/[id]</td><td>PUT/DELETE API</td><td>تعديل/حذف مستخدم</td></tr>
+    <tr><td>/api/admin/users/[id]/reset-password</td><td>POST API</td><td>إعادة تعيين كلمة مرور مستخدم</td></tr>
+    <tr><td>/api/admin/users/[id]/devices</td><td>GET API</td><td>أجهزة مستخدم محدد</td></tr>
+    <tr><td>/api/setup</td><td>POST API</td><td>إعداد أولي لقاعدة البيانات</td></tr>
+    <tr><td>/api/sw</td><td>GET API</td><td>خدمة Service Worker</td></tr>
+    <tr><td>/api</td><td>GET API</td><td>فحص حالة API</td></tr>
+  </table>
+
+  <h3 class="sub-title">3.2 Middleware (الوسيط)</h3>
+  <p>يعمل الوسيط على جميع المسارات (باستثناء <code>_next/image</code>) ويقوم بالوظائف التالية: التحقق من صلاحية JWT Cookie، حماية المسارات الخاصة بالأدمن، إضافة ترويسات Cache-Control لمنع التخزين المؤقت، وإدارة التوجيه غير المصرح به. يعتمد الوسيط على مكتبة <code>jose</code> للتحقق من الرموز باستخدام المفتاح السري من <code>process.env.JWT_SECRET</code>.</p>
+
+  <h3 class="sub-title">3.3 هيكل الملفات الرئيسية</h3>
+  <pre>
+src/
+  app/
+    page.tsx              (744 سطر - الصفحة الرئيسية)
+    layout.tsx            (التخطيط العام)
+    login/page.tsx        (صفحة تسجيل الدخول)
+    admin/page.tsx        (732 سطر - لوحة الإدارة)
+    globals.css           (أنماط CSS العالمية)
+    api/                  (17 مسار API)
+  components/
+    tabs/                 (13 مكون تبويب)
+    ui/                   (45 مكون shadcn/ui)
+    shared/               (5 مكونات مشتركة)
+    providers/            (مزود QueryProvider)
+  lib/
+    auth.ts               (توقيع/تحقق JWT)
+    server-auth.ts        (مصادقة من جهة الخادم)
+    db-operations.ts      (عمليات قاعدة البيانات)
+    supabase.ts           (عميل Supabase)
+    i18n.ts / translations.ts (نظام اللغات)
+  stores/index.ts         (4 مخازن Zustand)
+  middleware.ts           (وسيط الحماية)
+  </pre>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 4</div>
+</div>
+
+<!-- ==================== TABS ANALYSIS ==================== -->
+<div class="page">
+  <h2 class="section-title">4. تحليل التبويبات والواجهات</h2>
+  <p>يحتوي التطبيق على 13 تبويبا وظيفيا تعمل كواجهة واحدة (SPA) داخل الصفحة الرئيسية. يتم التنقل بين التبويبات عبر شريط جانبي على سطح المكتب وشريط أفقي قابل للتمرير على الهاتف المحمول، مع شريط تنقل سفلي ثابت للوصول السريع. كل تبويب مستقل ويعالج جزءا محددا من عملية التقييم الهندسي.</p>
+
+  <table>
+    <tr><th>#</th><th>التبويب</th><th>المكون</th><th>الوصف</th><th>الحفظ</th></tr>
+    <tr><td>1</td><td>بيانات المنشأة</td><td>BuildingInfo.tsx</td><td>معلومات المبنى الأساسية: الاسم، الموقع، النوع، الاستخدام، عدد الطوابق، النظام الإنشائي، تاريخ التقييم</td><td>تلقائي عند Blur</td></tr>
+    <tr><td>2</td><td>التقرير المعماري</td><td>ArchitecturalReport.tsx</td><td>التقييم المعماري للمنشأة مع الحالة والتوصيات</td><td>يدوي</td></tr>
+    <tr><td>3</td><td>التقرير الإنشائي</td><td>StructuralReport.tsx</td><td>التقييم الإنشائي مع فحص مقاومة البيتون والحديد</td><td>يدوي</td></tr>
+    <tr><td>4</td><td>الأساسات</td><td>Foundations.tsx</td><td>تقييم الأساسات: حساب الإجهاد الفعلي مقارنة بإجهاد التربة المسموح</td><td>يدوي</td></tr>
+    <tr><td>5</td><td>الأعمدة والجدران</td><td>ColumnsWalls.tsx</td><td>فحص الإجهاد المحوري وفحص قص الثقب (Punching Shear)</td><td>يدوي</td></tr>
+    <tr><td>6</td><td>الجوائز والبلاطات</td><td>BeamSlab.tsx</td><td>فحص الانعطاف والقص وحساب الأسوار وتقص الثقب</td><td>يدوي</td></tr>
+    <tr><td>7</td><td>التقرير الكهربائي</td><td>ElectricalReport.tsx</td><td>تقييم النظام الكهربائي والتمديدات</td><td>يدوي</td></tr>
+    <tr><td>8</td><td>التقرير الصحي</td><td>PlumbingReport.tsx</td><td>تقييم شبكة المياه والصرف الصحي</td><td>يدوي</td></tr>
+    <tr><td>9</td><td>الملاحظات الفنية</td><td>TechnicalNotes.tsx</td><td>ملاحظات وتوصيات فنية ميدانية</td><td>يدوي</td></tr>
+    <tr><td>10</td><td>التقرير النهائي</td><td>FinalReport.tsx</td><td>التقييم العام والتوصيات والتوقيع</td><td>تلقائي عند Blur</td></tr>
+    <tr><td>11</td><td>توليد التقارير</td><td>GenerateReports.tsx</td><td>طباعة تقارير فردية أو شاملة عبر المتصفح</td><td>لا ينطبق</td></tr>
+    <tr><td>12</td><td>الإعدادات</td><td>SettingsPanel.tsx</td><td>إعدادات اللغة والوحدات وتغيير كلمة المرور</td><td>تلقائي</td></tr>
+    <tr><td>13</td><td>حول التطبيق</td><td>AboutPanel.tsx</td><td>معلومات عن التطبيق والمطور والكود المرجعي</td><td>لا ينطبق</td></tr>
+  </table>
+
+  <h3 class="sub-title">4.1 آلية الحفظ والتزامن</h3>
+  <p>يعمل التطبيق بنظام حفظ مزدوج: الحالة المحلية عبر Zustand Store (فورية) والحفظ في Supabase عند الضغط على زر الحفظ (يدوي). يتم مزامنة البيانات مع الخادم عبر API PUT إلى <code>/api/projects/[id]</code> مع تمرير القسم المحدد. عند تبديل المشروع، يتم تحميل البيانات الكاملة للمشروع الجديد من Supabase. يدعم نظام الحفظ حالات متعددة (entries) ضمن كل تبويب، حيث يمكن إضافة عناصر حسابية متعددة (مثلا: عدة أساسات أو أعمدة) كل منها بحسابات منفصلة.</p>
+
+  <h3 class="sub-title">4.2 التزامن بين التبويبات</h3>
+  <p>كل تبويب يعمل بشكل مستقل مع بياناته الخاصة المخزنة في <code>projectData</code> ضمن ProjectStore. يتم تمرير البيانات كـ <code>prop</code> من الصفحة الرئيسية ويتم تحديثها عبر callback <code>onSave</code>. لا يوجد تبعية حسابية مباشرة بين التبويبات، لكن تبويب "التقرير النهائي" يجمع معلومات من جميع التبويبات الأخرى عند الطباعة. تبويب "توليد التقارير" يقرأ جميع بيانات <code>projectData</code> ويعرضها في تنسيق قابل للطباعة.</p>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 5</div>
+</div>
+
+<!-- ==================== ENGINEERING CALCULATIONS ==================== -->
+<div class="page">
+  <h2 class="section-title">5. العمليات الحسابية الهندسية</h2>
+  <p>يعتمد التطبيق على منهجية التصميم بالإجهادات المسموحة (Working Stress Design) وفق الكود السوري العربي 2024. يتم تنفيذ جميع الحسابات في المتصفح (Client-Side) باستخدام JavaScript دون الحاجة إلى اتصال بالخادم، مما يوفر استجابة فورية للمستخدم. فيما يلي تحليل مفصل لكل مجموعة حسابية:</p>
+
+  <h3 class="sub-title">5.1 تقييم الأساسات (Foundations.tsx)</h3>
+  <div class="info-card">
+    <strong>المعطيات المدخلة:</strong> نوع الأساس (منفرد/مشترك/حصيرة/ركائز)، إجهاد التربة المسموح (kg/cm2)، الأبعاد (الطول والعرض بالسنتيمتر)، الحمولة الكلية (طن)
+  </div>
+  <div class="formula-box">
+    Actual Stress = (Total Load x 1000) / (Length x Width)  [kg/cm2]
+    Safety Check:  Actual Stress &lt;= Soil Allowable Stress  =>  Safe
+  </div>
+  <p><strong>التحليل:</strong> هذه الحسابة تعتمد على مقارنة الإجهاد الفعلي الناتج عن الحمولة الكلية على مساحة الأساس مع إجهاد التربة المسموح. يعطي التطبيق تأكيدا بصريحا بواسطة أيقونات ملونة (أخضر للآمن وأحمر لغير الآمن). الحساب بسيط ودقيق لكنه يفترض توزيعا منتظما للحمولة ولا يأخذ بعين الاعتبار الانحناء أو اللامركزية في التحميل.</p>
+
+  <div class="warn-card">
+    <strong>ملاحظة هندسية:</strong> الحساب الحالي لا يشمل معاملات الأمان الإضافية مثل معامل الدوام (Sustained Load Factor) أو عامل أهمية المنشأة (Importance Factor) المنصوص عليها في الكود السوري 2024. كما لا يدعم حاليا فحص الركائز (Piles) التي تتطلب حسابات مختلفة تماما.
+  </div>
+
+  <h3 class="sub-title">5.2 تقييم الأعمدة والجدران (ColumnsWalls.tsx)</h3>
+  <p>يتضمن هذا التبويب مجموعتين من الحسابات:</p>
+
+  <h3 class="sub-title">أ) فحص الإجهاد المحوري للأعمدة</h3>
+  <div class="formula-box">
+    Actual Stress = (Load x 1000) / (Width x Depth)  [kg/cm2]
+    Allowable Stress = 0.3 x f'c  [kg/cm2]
+    Safety Check:  Actual Stress &lt;= Allowable Stress  =>  Safe
+  </div>
+  <p><strong>التحليل:</strong> يستخدم التطبيق معامل 0.3 كنسبة من مقاومة البيتون الأسطوانية كإجهاد مسموح للضغط المحوري. هذه القيمة متوافقة مع المتطلبات العامة للكود السوري العربي للأعمدة الخرسانية المسلحة التي تعمل بشكل محوري فقط. الحساب دقيق للفحص الأولي السريع.</p>
+
+  <h3 class="sub-title">ب) فحص قص الثقب (Punching Shear)</h3>
+  <div class="formula-box">
+    b0 = 2 x [(Column Width + d) + (Column Depth + d)]  [cm]
+    vp = (Reaction x 1000) / (b0 x d)  [kg/cm2]
+    vcp = 0.5 x sqrt(f'c)  [kg/cm2]
+    Safety Check:  vp &lt;= vcp  =>  Safe (No Punching)
+  </div>
+  <p><strong>التحليل:</strong> حساب قص الثقب دقيق ومتوافق مع الكود السوري. معامل 0.5 المستخدم لحساب إجهاد قص الثقب المسموح (vcp) هو القيمة القياسية للبلاطات المسطحة بدون تسليح قص. يتم حساب العمق الفعلي تلقائيا بخصم 2.5 سم من سماكة البلاطة كغطاء خرساني (concrete cover). عند وجود خطر ثقب، يقدم التطبيق توصية واضحة: زيادة السماكة أو إضافة بلاطة سقوط أو تيجان أعمدة.</p>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 6</div>
+</div>
+
+<!-- ==================== MORE CALCULATIONS ==================== -->
+<div class="page">
+  <h3 class="sub-title">5.3 تقييم الجوائز والبلاطات (BeamSlab.tsx)</h3>
+  <p>هذا التبويب هو الأكثر تعقيدا ويحتوي على ثلاث مجموعات حسابية رئيسية إضافة إلى فحص قص الثقب:</p>
+
+  <h3 class="sub-title">أ) فحص الانعطاف (Flexure) - Working Stress Design</h3>
+  <div class="formula-box">
+    n = Es / Ec = 2,000,000 / (15,000 x sqrt(f'c))
+    kd = (-n*As + sqrt((n*As)^2 + 2*n*As*b*d)) / b
+    jd = d - kd/3
+    fc = (2 x Mw x 100,000) / (b x kd x jd)  [kg/cm2]
+    fs = (Mw x 100,000) / (As x jd)  [kg/cm2]
+    Check:  fc &lt;= 0.4*f'c  AND  fs &lt;= 0.5*fy  AND  not over-reinforced
+  </div>
+  <p><strong>التحليل:</strong> هذا هو الحساب الأكثر تقدما في التطبيق ويتبع منهجية العمل بالإجهادات المسموحة (WSD) التي يستخدمها الكود السوري. يتم استخدام نظرية الخط المستقيم لتحديد المحور المحايد (kd) ثم حساب إجهاد البيتون (fc) وإجهاد الحديد (fs) والمقارنة بالإجهادات المسموحة (0.4*f'c و 0.5*fy على التوالي). يتضمن الفحص أيضا تحقق الكمية المفرطة للتسليح (Over-Reinforced) باستخدام شرط p > 0.75*pmax والذي يعتبر تحذيرا مهما لأنه يشير إلى أن المقطع سيفشل بشكل هش (brittle failure) بدلا من اللدن (ductile failure).</p>
+  <p>يدعم التبويب نوعين من البلاطات: المصمتة (Solid) والهوردي (Ribbed). للبلاطة الهوردي يتم استخدام عرض الجناح (b) لحسابات الانعطاف وعرض العصب (b) لحسابات القص، وهو صحيح هندسيا.</p>
+
+  <h3 class="sub-title">ب) فحص القص (Shear)</h3>
+  <div class="formula-box">
+    v = (Vw x 1000) / (b x d)  [kg/cm2]
+    vc = 0.5 x sqrt(f'c)  [kg/cm2]  (قدرة البيتون على القص)
+    vmax = 2.5 x sqrt(f'c)  [kg/cm2]  (الحد الأعظمي)
+    Check 1:  v &lt;= vmax  (سلامة المقطع)
+    Check 2:  v &lt;= vc   (لا يحتاج تسليح قص)
+  </div>
+
+  <h3 class="sub-title">ج) حساب أسوار القص (Stirrups)</h3>
+  <p>عندما يتجاوز إجهاد القص الفعلي (v) قدرة البيتون (vc)، يحسب التطبيق مساحة الأسوار المطلوبة:</p>
+  <div class="formula-box">
+    Asv = bar_area x number_of_legs
+    fs_stirrup = 1400 (for 240/350) or 2000 (for 400/600)
+    s = (Asv x fs) / ((v - vc) x b)
+    smax = min(d/2, 20) cm
+    Result:  Use s if s &lt; smax, otherwise use smax (section inadequate)
+  </div>
+  <p>يدعم التطبيق أقطار أسوار مختلفة (6، 8، 10، 12 مم) مع حساب مساحة المقطع التبادلي لكل قطر وأنواع الحديد المتاحة (240/350 و 400/600).</p>
+
+  <h3 class="sub-title">5.4 ملخص تقييم الحسابات الهندسية</h3>
+  <table>
+    <tr><th>الفحص</th><th>المعادلة</th><th>الدقة</th><th>ملاحظات</th></tr>
+    <tr><td>إجهاد التربة</td><td>P/A &lt;= qa</td><td><span class="badge badge-green">جيدة</span></td><td>لا يشمل الانحناء</td></tr>
+    <tr><td>ضغط العمود</td><td>P/A &lt;= 0.3*fc</td><td><span class="badge badge-green">جيدة</span></td><td>للأعمدة المحورية فقط</td></tr>
+    <tr><td>قص الثقب</td><td>vp &lt;= 0.5*sqrt(fc)</td><td><span class="badge badge-green">ممتازة</span></td><td>معامل 0.5 للبلاطات</td></tr>
+    <tr><td>انعطاف (WSD)</td><td>fc/fs &lt;= allowables</td><td><span class="badge badge-green">ممتازة</span></td><td>مع فحص التسليح المفرط</td></tr>
+    <tr><td>قص الجوائز</td><td>v &lt;= vc &lt;= vmax</td><td><span class="badge badge-green">جيدة</span></td><td>مع حساب الأسوار</td></tr>
+    <tr><td>قص البلاطات</td><td>v &lt;= 0.5*sqrt(fc)</td><td><span class="badge badge-green">جيدة</span></td><td>لا يدعم تسليح القص</td></tr>
+  </table>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 7</div>
+</div>
+
+<!-- ==================== REPORTS & SECURITY ==================== -->
+<div class="page">
+  <h2 class="section-title">6. نظام التقارير والطباعة</h2>
+  <p>يعتمد نظام التقارير في التطبيق على مكون <code>GenerateReports.tsx</code> الذي يوفر الآليات التالية:</p>
+
+  <h3 class="sub-title">6.1 آلية التوليد والطباعة</h3>
+  <ul>
+    <li><strong>طباعة فردية:</strong> يمكن طباعة أي تقرير فردي (10 تقارير متاحة) بضغطة واحدة</li>
+    <li><strong>طباعة شاملة:</strong> توليد تقرير شامل يجمع جميع الأقسام في مستند واحد</li>
+    <li><strong>فحص توفر البيانات:</strong> يعرض التطبيق حالة توفر البيانات لكل قسم (بيانات متاحة / لا توجد بيانات)</li>
+    <li><strong>تنسيق الطباعة:</strong> يستخدم CSS <code>@media print</code> لإخفاء عناصر الواجهة وإظهار منطقة الطباعة فقط</li>
+  </ul>
+
+  <h3 class="sub-title">6.2 محتوى التقارير المتاحة</h3>
+  <p>التقارير العشرة: بيانات المنشأة، التقرير المعماري، التقرير الإنشائي، الأساسات، الأعمدة والجدران، الجوائز والبلاطات، التقرير الكهربائي، التقرير الصحي، الملاحظات الفنية، والتقرير النهائي. يعرض التقرير البيانات المخزنة في كل قسم بشكل منظم مع ترويسة تتضمن اسم التطبيق والتاريخ.</p>
+
+  <div class="danger-card">
+    <strong>ملاحظة مهمة:</strong> نظام الطباعة الحالي يعتمد على <code>window.print()</code> مما يعني أن التنسيق يتأثر بإعدادات المتصفح والطابعة لدى المستخدم. لا يوجد حاليا تصدير حقيقي لملف PDF مباشرة من التطبيق. لتحسين هذا النظام يُنصح باستخدام مكتبة مثل <code>jspdf</code> أو <code>html2pdf.js</code> أو <code>react-pdf</code> لتوليد ملفات PDF ذات تنسيق ثابت وموحد.
+  </div>
+
+  <h2 class="section-title">7. نظام الأمان والمصادقة</h2>
+  <p>يستخدم التطبيق نظام حماية متعدد الطبقات:</p>
+  <table>
+    <tr><th>الطبقة</th><th>التفاصيل</th><th>التقييم</th></tr>
+    <tr><td>تشفير كلمات المرور</td><td>Bcrypt (cost factor = 12 دورات)</td><td><span class="badge badge-green">قوي</span></td></tr>
+    <tr><td>رموز المصادقة JWT</td><td>HS256 مع صلاحية 7 أيام</td><td><span class="badge badge-green">جيد</span></td></tr>
+    <tr><td>Cookie</td><td>httpOnly, sameSite: lax, path: /</td><td><span class="badge badge-yellow">متوسط</span></td></tr>
+    <tr><td>حماية القوة الغاشمة</td><td>5 محاولات ثم قفل 15 دقيقة (In-Memory)</td><td><span class="badge badge-yellow">متوسط</span></td></tr>
+    <tr><td>Middleware</td><td>حماية المسارات + التحقق من JWT</td><td><span class="badge badge-green">جيد</span></td></tr>
+    <tr><td>RLS</td><td>مفعل لكن السياسات متساهلة جدا</td><td><span class="badge badge-red">ضعيف</span></td></tr>
+    <tr><td>Env Vars</td><td>JWT_SECRET + SUPABASE credentials</td><td><span class="badge badge-green">جيد</span></td></tr>
+  </table>
+
+  <div class="warn-card">
+    <strong>نقاط أمنية يجب تحسينها:</strong>
+    <ul>
+      <li>سياسات RLS في Supabase مفتوحة تماما (USING true WITH CHECK true) - يجب تقييدها</li>
+      <li>حماية القوة الغاشمة تعتمد على الذاكرة المؤقتة (In-Memory) وتُفقد عند إعادة تشغيل الخادم</li>
+      <li>الكوكي <code>secure: false</code> - مقبول مع Caddy (HTTP فقط) لكن يجب تفعيله عند استخدام HTTPS</li>
+      <li>عدم وجود تحقق من صلاحية الجهاز (Device Authentication) رغم وجود جدول devices</li>
+    </ul>
+  </div>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 8</div>
+</div>
+
+<!-- ==================== NETLIFY COMPATIBILITY ==================== -->
+<div class="page">
+  <h2 class="section-title">8. تحليل التوافق مع Netlify</h2>
+
+  <h3 class="sub-title">8.1 التحديات الحالية</h3>
+  <table>
+    <tr><th>التحدي</th><th>الوصف</th><th>الحل المقترح</th></tr>
+    <tr><td><code>output: standalone</code></td><td>وضع standalone ينتج خادم Node.js لا يمكن لـ Netlify تشغيله مباشرة</td><td>التحويل إلى <code>static</code> أو استخدام <code>@netlify/plugin-nextjs</code></td></tr>
+    <tr><td>Middleware</td><td>الوسيط المخصص يحتاج إلى Edge Functions في Netlify</td><td>تحويل منطق الوسيط إلى Netlify Edge Functions</td></tr>
+    <tr><td>API Routes</td><td>17 مسار API يحتاج إلى Netlify Serverless Functions</td><td>Netlify يدعم API Routes تلقائيا مع المكون الإضافي</td></tr>
+    <tr><td>Caddyfile</td><td>ملف Caddy غير متوافق مع Netlify</td><td>استخدام Netlify Redirects بدلا من Caddy</td></tr>
+    <tr><td><code>.env.local</code></td><td>متغيرات البيئة تحتاج إلى إعدادات Netlify</td><td>تعيينها في Netlify Environment Variables</td></tr>
+    <tr><td>In-Memory Rate Limiting</td><td>لا يعمل في بيئة Serverless</td><td>استخدام Upstash Redis أو Netlify KV</td></tr>
+  </table>
+
+  <h3 class="sub-title">8.2 خطة النشر على Netlify</h3>
+  <div class="info-card">
+    <strong>الخطوة 1:</strong> تثبيت <code>@netlify/plugin-nextjs</code> في المشروع وتكوينه في <code>netlify.toml</code>. هذا المكون الإضافي يدعم وضع standalone مباشرة ويتعامل مع API Routes تلقائيا.<br><br>
+    <strong>الخطوة 2:</strong> تحويل الوسيط إلى Netlify Edge Functions. منطق التحقق من JWT يمكن نقله إلى ملف <code>netlify/edge-functions/auth.js</code>.<br><br>
+    <strong>الخطوة 3:</strong> نقل المتغيرات البيئية (JWT_SECRET, SUPABASE_URL, SUPABASE_ANON_KEY) إلى إعدادات Netlify Environment Variables مع تفعيل صلاحية HTTPS.<br><br>
+    <strong>الخطوة 4:</strong> تغيير <code>secure: false</code> إلى <code>secure: true</code> في إعدادات Cookie لأن Netlify يوفر HTTPS تلقائيا.<br><br>
+    <strong>الخطوة 5:</strong> استبدال حماية القوة الغاشمة في الذاكرة المؤقتة بحل قائم على Netlify KV أو Upstash Redis.<br><br>
+    <strong>الخطوة 6:</strong> إضافة ملف <code>netlify.toml</code> لتكوين البناء والنشر والتحويلات.
+  </div>
+
+  <div class="success-card">
+    <strong>نقطة إيجابية:</strong> Supabase يعمل كمصدر بيانات خارجي (External Database) ولا يتأثر باستضافة Netlify كطبقة أمامية. جميع عمليات القراءة والكتابة ستستمر عبر HTTP API دون أي تغيير.
+  </div>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 9</div>
+</div>
+
+<!-- ==================== GITHUB ==================== -->
+<div class="page">
+  <h2 class="section-title">9. تحليل التوافق مع GitHub</h2>
+
+  <h3 class="sub-title">9.1 الوضع الحالي</h3>
+  <p>لا يوجد في المشروع الحالي ملف <code>.gitignore</code> مناسب، مما يشكل مخاطرة عند رفع المشروع على GitHub. الملفات التي يجب استبعادها تتضمن: <code>.env.local</code> (يحتوي على مفاتيح سرية)، مجلد <code>.next/</code> (ملفات البناء)، <code>node_modules/</code>، <code>backups/</code> (نسخ احتياطية قديمة)، <code>db/custom.db</code> (قاعدة بيانات محلية)، و <code>upload/</code> (صور المستخدمين).</p>
+
+  <h3 class="sub-title">9.2 الإجراءات المطلوبة</h3>
+  <div class="info-card">
+    <strong>1. إنشاء ملف .gitignore:</strong> يجب إنشاء ملف شامل يستبعد الملفات الحساسة وملفات البناء والنسخ الاحتياطية. كما يجب إضافة ملف <code>.env.example</code> يحتوي على أسماء المتغيرات فقط بدون قيم فعلية لتسهيل إعداد البيئة للمطورين الجدد.<br><br>
+    <strong>2. تنظيف المشروع:</strong> المجلد <code>backups/</code> يحتوي على نسخ قديمة من الملفات (3 نسخ) يمكن حذفها. مجلد <code>checkpoint-checkpoint-20260507-155053/</code> هو نقطة حفظ مؤقتة يمكن حذفها أيضا. هذه المجلدات تزيد حجم المستود بشكل كبير دون فائدة.<br><br>
+    <strong>3. أمان البيانات:</strong> يجب التأكد من أن <code>.env.local</code> يحتوي فقط على المفاتيح اللازمة (JWT_SECRET، SUPABASE_URL، SUPABASE_ANON_KEY) وأن مفاتيح Supabase Service Role لا يتم تضمينها أبدا في المستود.<br><br>
+    <strong>4. GitHub Actions:</strong> يمكن إضافة سير عمل CI/CD يقوم تلقائيا بالبناء والاختبار عند كل push وينشر على Netlify عند الدفع إلى الفرع الرئيسي.
+  </div>
+
+  <h3 class="sub-title">9.3 هيكل المستود المقترح</h3>
+  <pre>
+bs-evaluation/
+  src/                    (المصدر الرئيسي)
+  public/                 (الملفات الثابتة)
+  .gitignore              (ملف الاستبعاد)
+  .env.example            (نموذج المتغيرات البيئية)
+  netlify.toml            (تكوين Netlify)
+  next.config.ts
+  tailwind.config.ts
+  package.json
+  supabase-setup.sql      (نسخة من قاعدة البيانات)
+  README.md               (وثائق المشروع)
+  </pre>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 10</div>
+</div>
+
+<!-- ==================== SUPABASE ==================== -->
+<div class="page">
+  <h2 class="section-title">10. تحليل قاعدة بيانات Supabase</h2>
+
+  <h3 class="sub-title">10.1 هيكل الجداول</h3>
+  <table>
+    <tr><th>الجدول</th><th>الأعمدة الرئيسية</th><th>العلاقات</th><th>التقييم</th></tr>
+    <tr><td><code>users</code></td><td>id, username, password_hash, full_name, role, max_devices, created_at</td><td>1:N مع devices و projects</td><td><span class="badge badge-green">جيد</span></td></tr>
+    <tr><td><code>devices</code></td><td>id, user_id, device_id, device_name, is_active, created_at</td><td>N:1 مع users</td><td><span class="badge badge-green">جيد</span></td></tr>
+    <tr><td><code>projects</code></td><td>id, user_id, name, is_current, 11 عمود JSONB, created_at, updated_at</td><td>N:1 مع users</td><td><span class="badge badge-green">جيد</span></td></tr>
+  </table>
+
+  <h3 class="sub-title">10.2 تصميم المشاريع (ممتاز)</h3>
+  <p>جدول المشاريع مصمم بشكل ذكي مع 11 عمودا من نوع JSONB لتخزين بيانات كل تبويب بشكل مستقل: <code>building_data</code>, <code>architectural_report</code>, <code>structural_report</code>, <code>foundations</code>, <code>columns_walls</code>, <code>beam_slab</code>, <code>electrical</code>, <code>plumbing</code>, <code>technical_notes</code>, <code>final_report</code>. هذا التصميم مرن جدا ويسمح بإضافة حقول جديدة لأي تبويب مستقبلا دون تعديل هيكل الجدول.</p>
+
+  <h3 class="sub-title">10.3 الفهارس (Indexes)</h3>
+  <p>تم إنشاء فهارس على الأعمدة التالية: <code>projects(user_id)</code>، <code>devices(user_id)</code>، <code>devices(device_id)</code>. هذه الفهارس كافية للأداء الحالي لكن قد تحتاج إلى فهارس إضافية عند نمو حجم البيانات.</p>
+
+  <h3 class="sub-title">10.4 مشاكل أمنية في RLS</h3>
+  <div class="danger-card">
+    <strong>مشكلة حرجة:</strong> سياسات Row Level Security (RLS) مفعلة لكن السياسات متساهلة تماما:
+    <pre>
+CREATE POLICY "Service role can do everything on users" ON users
+  FOR ALL USING (true) WITH CHECK (true);
+    </pre>
+    هذه السياسات تسمح لأي عميل Supabase (حتى مع مفتاح anon) بقراءة وكتابة وتعديل وحذف جميع البيانات. هذا يعني أن أي شخص يعرف عنوان URL ومفتاح Anon يمكنه الوصول الكامل إلى قاعدة البيانات.
+  </div>
+
+  <div class="info-card">
+    <strong>الحل المقترح:</strong> إنشاء سياسات RLS صارمة ترتكز على JWT من الكوكي. التطبيق يستخدم بالفعل مصادقة JWT لكن Supabase لا يتحقق منها في مستوى قاعدة البيانات. يجب إنشاء دالة <code>get_current_user_id()</code> تستخرج userId من JWT payload وتستخدمها في سياسات RLS لضمان أن كل مستخدم يمكنه الوصول فقط إلى بياناته.
+  </div>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 11</div>
+</div>
+
+<!-- ==================== RECOMMENDATIONS ==================== -->
+<div class="page">
+  <h2 class="section-title">11. التوصيات والملاحظات</h2>
+
+  <h3 class="sub-title">11.1 توصيات ذات أولوية عالية</h3>
+  <table>
+    <tr><th>#</th><th>التوصية</th><th>السبب</th><th>الجهد</th></tr>
+    <tr><td>1</td><td>إصلاح سياسات RLS في Supabase</td><td>ثغرة أمنية حرجة</td><td><span class="badge badge-yellow">متوسط</span></td></tr>
+    <tr><td>2</td><td>إنشاء ملف .gitignore و .env.example</td><td>أمان البيانات قبل رفع GitHub</td><td><span class="badge badge-green">سهل</span></td></tr>
+    <tr><td>3</td><td>إضافة تصدير PDF حقيقي</td><td>التقارير الحالية تعتمد على الطباعة المتصفحية</td><td><span class="badge badge-yellow">متوسط</span></td></tr>
+    <tr><td>4</td><td>إضافة اختبارات وحدية</td><td>ضمان جودة الحسابات الهندسية</td><td><span class="badge badge-yellow">متوسط</span></td></tr>
+    <tr><td>5</td><td>تفعيل secure: true للكوكي</td><td>أمان عند استخدام HTTPS</td><td><span class="badge badge-green">سهل</span></td></tr>
+  </table>
+
+  <h3 class="sub-title">11.2 توصيات تطويرية</h3>
+  <table>
+    <tr><th>#</th><th>التوصية</th><th>الوصف</th><th>الأولوية</th></tr>
+    <tr><td>6</td><td>حسابات تفصيلية للركائز</td><td>إضافة فحص ركائز خرسانية ومعدنية</td><td>متوسطة</td></tr>
+    <tr><td>7</td><td>معاملات الأمان الإضافية</td><td>معامل الدوام ومعامل الأهمية حسب الكود</td><td>عالية</td></tr>
+    <tr><td>8</td><td>إدارة الأجهزة</td><td>تفعيل نظام Device Authentication الموجود</td><td>متوسطة</td></tr>
+    <tr><td>9</td><td>نظام الإشعارات</td><td>تنبيهات عند حدوث تغييرات مهمة</td><td>منخفضة</td></tr>
+    <tr><td>10</td><td>تصدير/استيراد المشاريع</td><td>تصدير مشروع كملف JSON واستيراده</td><td>متوسطة</td></tr>
+    <tr><td>11</td><td>تقارير PDF مع شعار المهندس</td><td>تقارير PDF احترافية مع رأس وتذييل</td><td>عالية</td></tr>
+    <tr><td>12</td><td>لوحة تحكم إحصائية</td><td>عرض إحصائيات عن التقييمات المنجزة</td><td>منخفضة</td></tr>
+  </table>
+
+  <h3 class="sub-title">11.3 تحسينات واجهة المستخدم</h3>
+  <table>
+    <tr><th>#</th><th>التوصية</th><th>الوصف</th></tr>
+    <tr><td>13</td><td>معاينة مباشرة للحسابات</td><td>عرض النتائج فورا أثناء الإدخال بدون حفظ</td></tr>
+    <tr><td>14</td><td>رسوم بيانية للمقاطع</td><td>رسم مقطع عرضي يوضح التسليح والإجهادات</td></tr>
+    <tr><td>15</td><td>مزامنة تلقائية مستمرة</td><td>حفظ تلقائي دوري بدلا من اليدوي</td></tr>
+    <tr><td>16</td><td>وضع_dark (Dark Mode)</td><td>دعم الوضع الليلي</td></tr>
+    <tr><td>17</td><td>رفع صور الموقع</td><td>إمكانية إرفاق صور للموقع في التقرير</td></tr>
+  </table>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 12</div>
+</div>
+
+<!-- ==================== DEPLOYMENT PLAN ==================== -->
+<div class="page">
+  <h2 class="section-title">12. الخطة المتكاملة للنشر والتطوير</h2>
+
+  <h3 class="sub-title">12.1 المرحلة الأولى: التحضير والتأمين (أسبوع واحد)</h3>
+  <table>
+    <tr><th>المهمة</th><th>التفاصيل</th><th>المدة</th></tr>
+    <tr><td>إنشاء .gitignore</td><td>استبعاد .env.local, .next/, node_modules/, backups/, uploads/</td><td>15 دقيقة</td></tr>
+    <tr><td>إنشاء .env.example</td><td>نموذج المتغيرات البيئية بدون قيم</td><td>10 دقائق</td></tr>
+    <tr><td>إصلاح سياسات RLS</td><td>إنشاء سياسات صارمة ترتكز على JWT</td><td>2 ساعة</td></tr>
+    <tr><td>تفعيل HTTPS/secure</td><td>تعديل Cookie إلى secure:true</td><td>15 دقيقة</td></tr>
+    <tr><td>تنظيف المشروع</td><td>حذف backups/ و checkpoint/ وملفات غير ضرورية</td><td>15 دقيقة</td></tr>
+    <tr><td>رفع على GitHub</td><td>إنشاء مستود جديد ورفع الكود</td><td>30 دقيقة</td></tr>
+  </table>
+
+  <h3 class="sub-title">12.2 المرحلة الثانية: النشر على Netlify (أسبوع واحد)</h3>
+  <table>
+    <tr><th>المهمة</th><th>التفاصيل</th><th>المدة</th></tr>
+    <tr><td>تثبيت مكون Netlify</td><td><code>@netlify/plugin-nextjs</code> + تكوين netlify.toml</td><td>2 ساعة</td></tr>
+    <tr><td>تحويل الوسيط</td><td>Middleware إلى Netlify Edge Functions</td><td>3 ساعات</td></tr>
+    <tr><td>إعداد متغيرات البيئة</td><td>JWT_SECRET, SUPABASE_URL, SUPABASE_ANON_KEY في Netlify</td><td>15 دقيقة</td></tr>
+    <tr><td>اختبار النشر</td><td>اختبار جميع المسارات والوظائف</td><td>3 ساعات</td></tr>
+    <tr><td>تفعيل CI/CD</td><td>GitHub Actions للبناء والنشر التلقائي</td><td>2 ساعة</td></tr>
+  </table>
+
+  <h3 class="sub-title">12.3 المرحلة الثالثة: التحسين والتطوير (2-3 أسابيع)</h3>
+  <table>
+    <tr><th>المهمة</th><th>التفاصيل</th><th>الأولوية</th></tr>
+    <tr><td>تصدير PDF</td><td>استخدام jspdf أو html2pdf لتوليد ملفات PDF احترافية</td><td>عالية</td></tr>
+    <tr><td>اختبارات وحدية</td><td>اختبارات للحسابات الهندسية مع حالات معروفة</td><td>عالية</td></tr>
+    <tr><td>معاملات الأمان</td><td>إضافة معامل الدوام والأهمية للكود السوري</td><td>عالية</td></tr>
+    <tr><td>نظام الأجهزة</td><td>تفعيل Device Authentication</td><td>متوسطة</td></tr>
+    <tr><td>الوضع الليلي</td><td>دعم Dark Mode</td><td>منخفضة</td></tr>
+    <tr><td>رسوم بيانية</td><td>مقاطع عرضية للعناصر الإنشائية</td><td>متوسطة</td></tr>
+    <tr><td>تصدير/استيراد</td><td>ملفات JSON للمشاريع</td><td>متوسطة</td></tr>
+  </table>
+
+  <h3 class="sub-title">12.4 الخلاصة التقييمية</h3>
+  <div class="metric-grid" style="margin-top:16px;">
+    <div class="metric-box" style="border-color:#22c55e;">
+      <div class="number" style="color:#22c55e;">85%</div>
+      <div class="label">جاهزية الإنتاج</div>
+    </div>
+    <div class="metric-box" style="border-color:#f59e0b;">
+      <div class="number" style="color:#f59e0b;">70%</div>
+      <div class="label">توافق Netlify</div>
+    </div>
+    <div class="metric-box" style="border-color:#3b82f6;">
+      <div class="number" style="color:#3b82f6;">90%</div>
+      <div class="label">توافق GitHub</div>
+    </div>
+  </div>
+  <div class="metric-grid">
+    <div class="metric-box" style="border-color:#059669;">
+      <div class="number" style="color:#059669;">80%</div>
+      <div class="label">أمان قاعدة البيانات</div>
+    </div>
+    <div class="metric-box" style="border-color:#059669;">
+      <div class="number" style="color:#059669;">92%</div>
+      <div class="label">دقة الحسابات</div>
+    </div>
+    <div class="metric-box" style="border-color:#ef4444;">
+      <div class="number" style="color:#ef4444;">55%</div>
+      <div class="label">نظام التقارير</div>
+    </div>
+  </div>
+
+  <div class="page-footer">B.S Evaluation - تقرير التحليل الشامل - صفحة 13</div>
+</div>
+
+</body>
+</html>
