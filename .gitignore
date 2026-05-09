@@ -48,3 +48,16 @@ nohup.out
 
 # standalone
 .next/standalone/
+
+# database
+/db/*.db
+
+# prisma (unused artifact)
+/prisma/
+
+# netlify
+.netlify/
+netlify.toml.backup
+
+# worklog (development only)
+worklog.md

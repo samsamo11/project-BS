@@ -16,7 +16,7 @@ const JWT_SECRET = getJWTSecret();
 
 const authPages = ['/login', '/register', '/forgot-password'];
 const staticPaths = ['/manifest.json', '/robots.txt'];
-const publicApiPaths = ['/api/auth/login', '/api/auth/register', '/api/auth/reset-password'];
+const publicApiPaths = ['/api/auth/login', '/api/auth/register'];
 
 // Add no-cache headers to ALL responses to prevent stale content
 function withNoCache(response: NextResponse): NextResponse {

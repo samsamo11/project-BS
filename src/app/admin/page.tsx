@@ -558,7 +558,7 @@ export default function AdminPage() {
               <Input
                 id="new-password"
                 type="password"
-                placeholder="4 أحرف على الأقل"
+                placeholder="8 أحرف على الأقل"
                 value={newUserForm.password}
                 onChange={(e) =>
                   setNewUserForm((prev) => ({ ...prev, password: e.target.value }))
