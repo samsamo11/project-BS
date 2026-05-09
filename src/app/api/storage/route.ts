@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     // Verify authentication
     const session = await requireAuth();
 
+    const ALLOWED_BUCKETS = ['evaluation-images'];
     const bucket = request.nextUrl.searchParams.get('bucket') || 'evaluation-images';
+    if (!ALLOWED_BUCKETS.includes(bucket)) {
+      return NextResponse.json({ error: 'حاوية التخزين غير صالحة' }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
+    }
     const folder = request.nextUrl.searchParams.get('folder') || 'uploads';
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20', 10);
     const offset = parseInt(request.nextUrl.searchParams.get('offset') || '0', 10);
@@ -82,6 +86,11 @@ export async function DELETE(request: NextRequest) {
     const session = await requireAuth();
 
     const { bucket, path } = await request.json();
+
+    const ALLOWED_BUCKETS = ['evaluation-images'];
+    if (!ALLOWED_BUCKETS.includes(bucket)) {
+      return NextResponse.json({ error: 'حاوية التخزين غير صالحة' }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
+    }
 
     if (!bucket || !path) {
       return NextResponse.json(

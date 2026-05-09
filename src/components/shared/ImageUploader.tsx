@@ -57,7 +57,7 @@ export default function ImageUploader({
         formData.append('file', file);
         formData.append('section', section);
 
-        const res = await fetch('/api/upload', {
+        const res = await fetch('/api/storage/upload', {
           method: 'POST',
           body: formData,
         });
@@ -106,10 +106,10 @@ export default function ImageUploader({
     // Try to delete from Supabase storage
     if (img.path) {
       try {
-        await fetch('/api/upload', {
+        await fetch('/api/storage', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: img.path }),
+          body: JSON.stringify({ bucket: 'evaluation-images', path: img.path }),
         });
       } catch {
         // silent

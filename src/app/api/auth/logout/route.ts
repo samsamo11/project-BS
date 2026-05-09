@@ -6,7 +6,7 @@ export async function POST() {
   });
   response.cookies.set('bs-session', '', {
     httpOnly: true,
-    secure: false, // Must match the login cookie setting
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 0,
     path: '/',

@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
 
     const bucket = request.nextUrl.searchParams.get('bucket') || 'evaluation-images';
+    const ALLOWED_FOLDERS = ['uploads'];
     const folder = request.nextUrl.searchParams.get('folder') || 'uploads';
+    if (!ALLOWED_FOLDERS.includes(folder)) {
+      return NextResponse.json({ error: 'مجلد غير صالح' }, { status: 400, headers: { 'Cache-Control': 'no-store' } });
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;

@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
 // JWT secret must be set via environment variable
-if (!process.env.JWT_SECRET) {
+const getJWTSecret = () => {
+  const envSecret = process.env.JWT_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    return new TextEncoder().encode(envSecret);
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return new TextEncoder().encode('bs-evaluation-jwt-secret-2024-x9k2m-fallback-do-not-use-in-prod');
+  }
   throw new Error('[CONFIG] JWT_SECRET is not set. Please add it to your .env.local file.');
-}
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+};
+const JWT_SECRET = getJWTSecret();
 
-const publicPaths = ['/login', '/register', '/forgot-password', '/manifest.json', '/robots.txt'];
-const publicApiPaths = ['/api/auth/login', '/api/auth/register'];
+const authPages = ['/login', '/register', '/forgot-password'];
+const staticPaths = ['/manifest.json', '/robots.txt'];
+const publicApiPaths = ['/api/auth/login', '/api/auth/register', '/api/auth/reset-password'];
 
 // Add no-cache headers to ALL responses to prevent stale content
 function withNoCache(response: NextResponse): NextResponse {
@@ -21,12 +29,7 @@ function withNoCache(response: NextResponse): NextResponse {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths without authentication
-  if (publicPaths.some(p => pathname === p)) {
-    return withNoCache(NextResponse.next());
-  }
-
-  // Allow Next.js internals and static files — but add cache-busting headers
+  // 1. Allow Next.js internals and static files — but add cache-busting headers
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
@@ -42,27 +45,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public API endpoints
+  // 2. Allow static paths (manifest, robots)
+  if (staticPaths.some(p => pathname === p)) {
+    return withNoCache(NextResponse.next());
+  }
+
+  // 3. Allow public API endpoints
   if (publicApiPaths.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
-  // Strip cache-busting query params (?_t=, ?_v=) before processing
-  // These are added by the login page to prevent cached responses
-  const cleanPathname = pathname.replace(/\?.*$/, '');
-
-  // Check for session cookie
+  // 4. Check auth
   const token = request.cookies.get('bs-session')?.value;
 
   if (!token) {
-    // No token — redirect pages to login, return 401 for API
+    // No token — authPages → allow (show login/register)
+    if (authPages.some(p => pathname === p)) {
+      return withNoCache(NextResponse.next());
+    }
+    // No token — API → 401
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    // No token — pages → redirect to /login
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
-    loginUrl.searchParams.set('from', cleanPathname);
-    // Strip cache-busting params from redirect URL
+    loginUrl.searchParams.set('from', pathname);
     const resp = NextResponse.redirect(loginUrl);
     return withNoCache(resp);
   }
@@ -72,15 +80,15 @@ export async function middleware(request: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const role = (payload as Record<string, unknown>).role as string | undefined;
 
-    // Admin routes: only admin role can access
-    if (pathname.startsWith('/admin') && role !== 'admin') {
+    // If authenticated user visits auth pages, redirect to home
+    if (authPages.some(p => pathname === p)) {
       const homeUrl = request.nextUrl.clone();
       homeUrl.pathname = '/';
       return NextResponse.redirect(homeUrl);
     }
 
-    // If authenticated user visits public auth pages, redirect to home
-    if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password') {
+    // Admin routes: only admin role can access
+    if (pathname.startsWith('/admin') && role !== 'admin') {
       const homeUrl = request.nextUrl.clone();
       homeUrl.pathname = '/';
       return NextResponse.redirect(homeUrl);
@@ -97,7 +105,7 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.redirect(loginUrl);
     response.cookies.set('bs-session', '', {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0,
       path: '/',

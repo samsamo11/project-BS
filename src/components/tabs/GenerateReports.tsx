@@ -276,6 +276,7 @@ export default function GenerateReports({ projectData }: GenerateReportsProps) {
             width: 100%;
             padding: 20px;
             background: white;
+            display: block !important;
           }
           .no-print {
             display: none !important;
@@ -371,7 +372,7 @@ export default function GenerateReports({ projectData }: GenerateReportsProps) {
       </div>
 
       {/* Print Area - Hidden on screen, visible on print */}
-      <div className="print-area hidden" ref={printRef}>
+      <div className="print-area" style={{ display: 'none' }} ref={printRef}>
         <div className="text-center mb-8 pb-4 border-b-2 border-gray-300">
           <h1 className="text-2xl font-bold mb-1">تقرير تقييم المنشأة</h1>
           <p className="text-sm text-gray-600">B.S Evaluation - Structural Engineering Report</p>

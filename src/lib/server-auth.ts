@@ -3,7 +3,17 @@ import { jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 
 // JWT secret — MUST match auth.ts exactly. Uses .env.local via start.sh
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const getJWTSecret = () => {
+  const envSecret = process.env.JWT_SECRET;
+  if (envSecret && envSecret.length >= 32) {
+    return new TextEncoder().encode(envSecret);
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return new TextEncoder().encode('bs-evaluation-jwt-secret-2024-x9k2m-fallback-do-not-use-in-prod');
+  }
+  throw new Error('[SECURITY] JWT_SECRET environment variable is required in production');
+};
+const JWT_SECRET = getJWTSecret();
 
 interface JWTPayload {
   userId: string;

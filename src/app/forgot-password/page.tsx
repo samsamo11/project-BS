@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Shield, Lock, Loader2, Mail, ArrowRight, CheckCircle, KeyRound } from 'lucide-react';
+import { Building2, Shield, Lock, Loader2, ArrowRight, CheckCircle, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 export default function ForgotPasswordPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,13 +22,13 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
 
-    if (!email.trim() || !username.trim() || !newPassword.trim()) {
+    if (!username.trim() || !newPassword.trim() || !confirmPassword.trim()) {
       setError('جميع الحقول مطلوبة');
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (newPassword.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
 
@@ -45,9 +44,9 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email.trim().toLowerCase(),
           username: username.trim(),
           newPassword,
+          confirmPassword,
         }),
       });
 
@@ -110,7 +109,7 @@ export default function ForgotPasswordPage() {
               استعادة كلمة المرور
             </CardTitle>
             <CardDescription className="text-gray-500 text-sm">
-              أدخل الإيميل واسم المستخدم لتعيين كلمة مرور جديدة
+              أدخل اسم المستخدم لتعيين كلمة مرور جديدة
             </CardDescription>
           </CardHeader>
 
@@ -140,27 +139,6 @@ export default function ForgotPasswordPage() {
                     <span>{error}</span>
                   </div>
                 )}
-
-                {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700 font-medium">
-                    البريد الإلكتروني
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="example@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pr-10 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
-                      dir="ltr"
-                      autoComplete="email"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
 
                 {/* Username */}
                 <div className="space-y-2">
@@ -192,7 +170,7 @@ export default function ForgotPasswordPage() {
                     <Input
                       id="newPassword"
                       type="password"
-                      placeholder="6 أحرف على الأقل"
+                      placeholder="8 أحرف على الأقل"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="pr-10 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"

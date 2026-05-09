@@ -34,6 +34,9 @@ export async function PATCH(
     );
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
+    }
     if (message === 'Forbidden') {
       return NextResponse.json({ error: message }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
     }
@@ -63,6 +66,9 @@ export async function DELETE(
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
+    }
     if (message === 'Forbidden') {
       return NextResponse.json({ error: message }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
     }

@@ -13,6 +13,12 @@ export async function GET(
     return NextResponse.json(devices);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    }
+    if (message === 'Forbidden') {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -31,6 +37,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    }
+    if (message === 'Forbidden') {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
@@ -45,6 +57,12 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    }
+    if (message === 'Forbidden') {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
@@ -58,6 +76,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    }
+    if (message === 'Forbidden') {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

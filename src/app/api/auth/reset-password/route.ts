@@ -4,27 +4,30 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, newPassword } = await request.json();
+    const { username, newPassword, confirmPassword } = await request.json();
 
-    if (!email || !username || !newPassword) {
+    if (!username || !newPassword || !confirmPassword) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 });
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, { status: 400 });
+    if (newPassword !== confirmPassword) {
+      return NextResponse.json({ error: 'كلمات المرور غير متطابقة' }, { status: 400 });
     }
 
-    // Find user by email AND username (double verification)
+    if (newPassword.length < 8) {
+      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' }, { status: 400 });
+    }
+
+    // Find user by username
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, username, email, full_name, role')
-      .eq('email', email.trim().toLowerCase())
+      .select('id, username, full_name, role')
       .eq('username', username.trim())
       .single();
 
     if (error || !user) {
       return NextResponse.json(
-        { error: 'لا يوجد حساب مرتبط بهذا الإيميل واسم المستخدم' },
+        { error: 'لا يوجد حساب مرتبط باسم المستخدم' },
         { status: 404 }
       );
     }
