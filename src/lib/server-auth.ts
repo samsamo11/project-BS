@@ -2,9 +2,8 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'bs-evaluation-jwt-secret-2024-x9k2m'
-);
+// JWT secret — MUST match auth.ts exactly. Uses .env.local via start.sh
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 interface JWTPayload {
   userId: string;

@@ -170,3 +170,54 @@ export async function deleteProject(projectId: string) {
 
   if (error) throw new Error('فشل حذف المشروع');
 }
+
+// ======== Device Operations ========
+export async function getDevicesByUser(userId: string) {
+  const { data, error } = await supabase
+    .from('devices')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error('فشل جلب الأجهزة');
+  return data || [];
+}
+
+export async function addDevice(userId: string, deviceId: string, deviceName: string) {
+  const { data, error } = await supabase
+    .from('devices')
+    .insert({
+      user_id: userId,
+      device_id: deviceId,
+      device_name: deviceName,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('الجهاز مسجل مسبقاً');
+    }
+    throw new Error('فشل إضافة الجهاز');
+  }
+  return data;
+}
+
+export async function toggleDevice(deviceId: string, isActive: boolean) {
+  const { error } = await supabase
+    .from('devices')
+    .update({ is_active: isActive })
+    .eq('id', deviceId);
+
+  if (error) throw new Error('فشل تحديث حالة الجهاز');
+}
+
+export async function deleteDevice(deviceId: string) {
+  const { error } = await supabase
+    .from('devices')
+    .delete()
+    .eq('id', deviceId);
+
+  if (error) throw new Error('فشل حذف الجهاز');
+}
