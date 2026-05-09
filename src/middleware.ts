@@ -40,7 +40,10 @@ export async function middleware(request: NextRequest) {
     pathname.endsWith('.jpeg') ||
     pathname.endsWith('.svg') ||
     pathname.endsWith('.ico') ||
-    pathname.endsWith('.webp')
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.zip') ||
+    pathname.endsWith('.pdf') ||
+    pathname.endsWith('.sql')
   ) {
     return NextResponse.next();
   }
