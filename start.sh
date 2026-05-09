@@ -28,8 +28,20 @@ if [ -f "$PID_FILE" ]; then
   rm -f "$PID_FILE"
 fi
 
-# Start server
+# Kill any leftover next-server processes
+pkill -f "next-server" 2>/dev/null || true
+sleep 1
+
+# Start server using next start
 cd "$APP_DIR"
-nohup node --max-old-space-size=1024 .next/standalone/server.js >> "$LOG_FILE" 2>&1 &
+nohup npx next start -p 3000 >> "$LOG_FILE" 2>&1 &
 echo $! > "$PID_FILE"
 echo "Server started PID: $(cat $PID_FILE)"
+
+# Wait and verify server is running
+sleep 4
+if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login 2>/dev/null | grep -q "200"; then
+  echo "Server is running successfully on port 3000"
+else
+  echo "Warning: Server may not have started properly. Check logs: $LOG_FILE"
+fi

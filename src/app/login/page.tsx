@@ -247,6 +247,24 @@ export default function LoginPage() {
                   </>
                 )}
               </Button>
+
+              {/* Action Links */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => router.push('/register')}
+                  className="text-emerald-600 hover:text-emerald-700 text-sm font-medium underline underline-offset-4 transition-colors"
+                >
+                  إنشاء حساب جديد
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/forgot-password')}
+                  className="text-gray-500 hover:text-gray-700 text-sm underline underline-offset-4 transition-colors"
+                >
+                  نسيت كلمة المرور؟
+                </button>
+              </div>
             </form>
           </CardContent>
         </Card>

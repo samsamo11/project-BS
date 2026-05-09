@@ -113,3 +113,68 @@ Stage Summary:
 - All auth flows working: login, session, logout, role-based access
 - Server running on port 3000 (standalone), proxied via Caddy on port 81
 - Static files (icons, manifest, favicon) all accessible
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Netlify compatibility, registration system, Supabase storage, GitHub integration
+
+Work Log:
+- Removed `output: 'standalone'` from next.config.ts for Netlify compatibility
+- Installed `@netlify/plugin-nextjs` (v5.15.11)
+- Created `netlify.toml` with build config and plugin setup
+- Updated package.json build script (removed standalone copy steps)
+- Created `.env.example` template for deployment
+- Created self-registration page `/register` with full validation
+- Created registration API `/api/auth/register` (POST, role='user' by default)
+- Updated middleware.ts to allow /register, /forgot-password as public paths
+- Updated middleware.ts to redirect authenticated users from auth pages to home
+- Updated login page with "إنشاء حساب جديد" and "نسيت كلمة المرور؟" links
+- Created Supabase Storage API routes:
+  - POST /api/storage/upload (file upload with validation)
+  - GET /api/storage (list files)
+  - DELETE /api/storage (delete file)
+- Updated supabase-storage-setup.sql with bucket and RLS policies
+- Created .github/workflows/deploy.yml for auto-deploy to Netlify
+- Updated .gitignore for clean repository
+- Updated start.sh to use `npx next start` instead of standalone server
+
+Files Created:
+- /home/z/my-project/netlify.toml
+- /home/z/my-project/.env.example
+- /home/z/my-project/src/app/register/page.tsx
+- /home/z/my-project/src/app/api/auth/register/route.ts
+- /home/z/my-project/src/app/api/storage/upload/route.ts
+- /home/z/my-project/src/app/api/storage/route.ts
+- /home/z/my-project/.github/workflows/deploy.yml
+
+Files Modified:
+- /home/z/my-project/next.config.ts (removed standalone output)
+- /home/z/my-project/package.json (new build script, added start:standalone)
+- /home/z/my-project/src/middleware.ts (added public paths, auth redirect fix)
+- /home/z/my-project/src/app/login/page.tsx (added register/forgot links)
+- /home/z/my-project/supabase-storage-setup.sql (updated bucket config)
+- /home/z/my-project/.gitignore (comprehensive ignore rules)
+- /home/z/my-project/start.sh (use next start instead of standalone)
+
+Build Results:
+- `rm -rf .next && npx next build` — SUCCESS (22 routes compiled)
+- New routes: /register, /api/auth/register, /api/storage, /api/storage/upload
+
+Test Results (15/24 structural tests PASSED):
+- ✅ Login page (200), Register page (200), Forgot-password page (200)
+- ✅ Unauthenticated redirects: / (307), /admin (307)
+- ✅ Static files: manifest.json (200), favicon.ico (200)
+- ✅ Register API validation: empty body, short username, short password
+- ✅ Login API validation: empty credentials
+- ✅ Protected APIs without auth: /api/auth/me (401), /api/projects (401), /api/storage (401), /api/storage/upload (401)
+- ⚠️ Database-dependent tests skipped (Supabase anon key is placeholder)
+
+Stage Summary:
+- App is NOW NETLIFY-COMPATIBLE
+- Self-registration system fully implemented
+- Supabase Storage API ready (needs bucket setup in Supabase dashboard)
+- GitHub Actions workflow ready for auto-deployment
+- Server running on port 3000 via start.sh
+- NOTE: User must set real NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local and Netlify env vars
+- NOTE: User must run supabase-storage-setup.sql in Supabase SQL Editor for storage

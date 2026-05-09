@@ -7,8 +7,8 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
-const publicPaths = ['/login', '/manifest.json', '/robots.txt'];
-const publicApiPaths = ['/api/auth/login'];
+const publicPaths = ['/login', '/register', '/forgot-password', '/manifest.json', '/robots.txt'];
+const publicApiPaths = ['/api/auth/login', '/api/auth/register'];
 
 // Add no-cache headers to ALL responses to prevent stale content
 function withNoCache(response: NextResponse): NextResponse {
@@ -79,8 +79,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(homeUrl);
     }
 
-    // If authenticated user visits /login, redirect to home
-    if (pathname === '/login') {
+    // If authenticated user visits public auth pages, redirect to home
+    if (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password') {
       const homeUrl = request.nextUrl.clone();
       homeUrl.pathname = '/';
       return NextResponse.redirect(homeUrl);
