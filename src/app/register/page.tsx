@@ -68,8 +68,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (password.length < 8) {
+      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
       return;
     }
 
@@ -250,7 +250,7 @@ export default function RegisterPage() {
                     <Input
                       id="password"
                       type="password"
-                      placeholder="6 أحرف على الأقل"
+                      placeholder="8 أحرف على الأقل"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pr-10 h-11 bg-gray-50/50 border-gray-200 focus:bg-white transition-colors text-right"

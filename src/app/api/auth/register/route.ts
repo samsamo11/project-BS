@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate password (min 6 chars)
-    if (typeof password !== 'string' || password.length < 6) {
+    // Validate password (min 8 chars)
+    if (typeof password !== 'string' || password.length < 8) {
       return NextResponse.json(
-        { error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' },
+        { error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' },
         { status: 400, headers: { 'Cache-Control': 'no-store' } }
       );
     }
