@@ -31,15 +31,11 @@ import {
 import Image from 'next/image';
 import {
   Building2,
-  FileText,
-  Home,
   Columns3,
   Layers,
-  Zap,
-  Droplets,
   ClipboardCheck,
-  FileOutput,
   Settings,
+  FileOutput,
   Info,
   Plus,
   Trash2,
@@ -48,6 +44,17 @@ import {
   Shield,
   Menu,
   X,
+  Database,
+  DraftingCompass,
+  PlugZap,
+  Pipette,
+  FileSpreadsheet,
+  FileDown,
+  AppWindow,
+  ChevronDown,
+  RefreshCw,
+  Download,
+  FolderOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -88,6 +95,7 @@ export default function HomePage() {
   const [editProjectName, setEditProjectName] = useState('');
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
+  const [accordionOpen, setAccordionOpen] = useState(true);
 
   // Wait for zustand persist rehydration before reading auth state.
   // This prevents a race condition where isAuthenticated defaults to false
@@ -252,6 +260,46 @@ export default function HomePage() {
     }
   };
 
+  const handleSaveLocally = () => {
+    const currentProject = projects.find((p: { id: string }) => p.id === currentProjectId);
+    const data = {
+      project: currentProject,
+      projectData: projectData,
+      savedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentProject?.name || 'project'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('تم الحفظ محلياً بنجاح');
+  };
+
+  const handleSaveToDB = async () => {
+    if (!currentProjectId) {
+      toast.error('لا يوجد مشروع محدد');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/projects/${currentProjectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData),
+      });
+      if (res.ok) {
+        toast.success('تم الحفظ في قاعدة البيانات بنجاح');
+      } else {
+        toast.error('فشل الحفظ في قاعدة البيانات');
+      }
+    } catch {
+      toast.error('فشل الحفظ في قاعدة البيانات');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -289,19 +337,19 @@ export default function HomePage() {
   }
 
   const tabs = [
-    { id: 'buildingData', label: t.buildingData, icon: Building2 },
-    { id: 'architecturalReport', label: t.architecturalReport, icon: Home },
-    { id: 'structuralReport', label: t.structuralReport, icon: FileText },
+    { id: 'buildingData', label: t.buildingData, icon: Database },
+    { id: 'architecturalReport', label: t.architecturalReport, icon: DraftingCompass },
+    { id: 'structuralReport', label: t.structuralReport, icon: Building2 },
     { id: 'foundations', label: t.foundations, icon: Layers },
     { id: 'columnsWalls', label: t.columnsWalls, icon: Columns3 },
     { id: 'beamSlab', label: t.beamSlab, icon: Layers },
-    { id: 'electricalReport', label: t.electricalReport, icon: Zap },
-    { id: 'plumbingReport', label: t.plumbingReport, icon: Droplets },
+    { id: 'electricalReport', label: t.electricalReport, icon: PlugZap },
+    { id: 'plumbingReport', label: t.plumbingReport, icon: Pipette },
     { id: 'technicalObservations', label: t.technicalObservations, icon: ClipboardCheck },
-    { id: 'finalReport', label: t.finalReport, icon: FileText },
-    { id: 'pdfExport', label: t.pdfExport, icon: FileOutput },
+    { id: 'finalReport', label: t.finalReport, icon: FileSpreadsheet },
+    { id: 'pdfExport', label: t.pdfExport, icon: FileDown },
     { id: 'settings', label: t.settings, icon: Settings },
-    { id: 'about', label: t.about, icon: Info },
+    { id: 'about', label: t.about, icon: AppWindow },
   ];
 
   const renderTabContent = () => {
@@ -338,6 +386,146 @@ export default function HomePage() {
   };
 
   const currentProject = projects.find((p: { id: string }) => p.id === currentProjectId);
+
+  // Reusable project management section
+  const renderProjectManagement = (onAfterSelect?: () => void) => (
+    <div className="p-3 border-b">
+      {/* Section Title */}
+      <div className="flex items-center gap-2 mb-2">
+        <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">إدارة المشاريع</span>
+      </div>
+
+      {/* Action Buttons Grid */}
+      <div className="grid grid-cols-2 gap-1.5 mb-2.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-[10px] gap-1 leading-tight"
+          onClick={handleSaveLocally}
+          disabled={!currentProjectId}
+        >
+          <Download className="w-3.5 h-3.5 shrink-0" />
+          <span>حفظ محلي</span>
+        </Button>
+        <Button
+          size="sm"
+          className="h-8 text-[10px] gap-1 leading-tight bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={handleSaveToDB}
+          disabled={!currentProjectId}
+        >
+          <Database className="w-3.5 h-3.5 shrink-0" />
+          <span>حفظ في قاعدة البيانات</span>
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-[10px] gap-1 leading-tight"
+          onClick={() => setShowNewProject(true)}
+        >
+          <Plus className="w-3.5 h-3.5 shrink-0" />
+          <span>مشروع جديد</span>
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-[10px] gap-1 leading-tight"
+          onClick={fetchProjects}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+          <span>تحديث البيانات</span>
+        </Button>
+      </div>
+
+      {/* Accordion Toggle */}
+      <button
+        onClick={() => setAccordionOpen(!accordionOpen)}
+        className="flex items-center justify-between w-full py-1.5 px-2 rounded-md hover:bg-accent transition-all duration-200"
+      >
+        <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${
+            accordionOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Accordion Content - Animated */}
+      <div
+        className={`grid transition-all duration-200 ease-in-out ${
+          accordionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+        style={{ transitionProperty: 'grid-template-rows, opacity' }}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="pt-1">
+            <ScrollArea className="max-h-60">
+              {projects.map((p: { id: string; name: string; is_current: boolean }) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-sm transition-all duration-150 mb-0.5 group ${
+                    p.id === currentProjectId
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                      : 'hover:bg-accent'
+                  }`}
+                >
+                  {/* Load/Select Button */}
+                  <button
+                    className="flex items-center gap-2 flex-1 min-w-0 rounded-sm"
+                    onClick={() => {
+                      handleSelectProject(p.id);
+                      onAfterSelect?.();
+                    }}
+                    title="📂 تحميل المشروع"
+                  >
+                    <FolderOpen
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        p.id === currentProjectId
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                    <span className="truncate text-xs">{p.name}</span>
+                    {p.is_current && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    )}
+                  </button>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      className="p-1 rounded hover:bg-accent/80 text-muted-foreground hover:text-foreground transition-all duration-150"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditProjectId(p.id);
+                        setEditProjectName(p.name);
+                      }}
+                      title="✏️ تعديل"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                    <button
+                      className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-all duration-150"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteProjectId(p.id);
+                      }}
+                      title="🗑️ حذف"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {projects.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-3">{t.noProjects}</p>
+              )}
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -408,36 +596,8 @@ export default function HomePage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Desktop */}
         <aside className="no-print hidden lg:flex w-64 flex-col border-e bg-card border-sidebar-border overflow-y-auto shrink-0">
-          {/* Project Selector */}
-          <div className="p-3 border-b">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
-              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-            <ScrollArea className="max-h-40">
-              {projects.map((p: { id: string; name: string; is_current: boolean }) => (
-                <div
-                  key={p.id}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
-                    p.id === currentProjectId
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-accent'
-                  }`}
-                  onClick={() => handleSelectProject(p.id)}
-                >
-                  <span className="truncate flex-1">{p.name}</span>
-                  {p.is_current && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/60 shrink-0" />
-                  )}
-                </div>
-              ))}
-              {projects.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-2">{t.noProjects}</p>
-              )}
-            </ScrollArea>
-          </div>
+          {/* Project Management Accordion */}
+          {renderProjectManagement()}
 
           <Separator />
 
@@ -490,29 +650,12 @@ export default function HomePage() {
               dir={isRTL ? 'rtl' : 'ltr'}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Same sidebar content */}
-              <div className="p-3 border-b">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">{t.projects}</span>
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowNewProject(true)}>
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-                <ScrollArea className="max-h-40">
-                  {projects.map((p: { id: string; name: string; is_current: boolean }) => (
-                    <div
-                      key={p.id}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-sm cursor-pointer transition-colors mb-0.5 ${
-                        p.id === currentProjectId ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
-                      }`}
-                      onClick={() => { handleSelectProject(p.id); setSidebarOpen(false); }}
-                    >
-                      <span className="truncate flex-1">{p.name}</span>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </div>
+              {/* Project Management Accordion */}
+              {renderProjectManagement(() => setSidebarOpen(false))}
+
               <Separator />
+
+              {/* Tab Navigation */}
               <ScrollArea className="flex-1 py-2 px-2 max-h-[calc(100vh-200px)]">
                 <nav className="space-y-0.5">
                   {tabs.map((tab) => {
@@ -521,13 +664,13 @@ export default function HomePage() {
                       <button
                         key={tab.id}
                         onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                           activeTab === tab.id
                             ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700 dark:text-emerald-400 font-medium'
                             : 'text-muted-foreground hover:bg-accent'
                         }`}
                       >
-                        <Icon className="w-4 h-4 shrink-0" />
+                        <Icon className={`w-4 h-4 shrink-0 ${activeTab === tab.id ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
                         <span>{tab.label}</span>
                       </button>
                     );
@@ -540,10 +683,10 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          {/* Mobile Tab Bar */}
+          {/* Mobile Scrollable Tab Bar */}
           <div className="no-print lg:hidden sticky top-0 z-30 bg-card/95 backdrop-blur border-b">
-            <ScrollArea className="w-full">
-              <div className="flex gap-1 p-2 min-w-max">
+            <div className="overflow-x-auto scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+              <div className="flex gap-1 p-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -551,19 +694,19 @@ export default function HomePage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                      className={`snap-start flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-200 ${
                         isActive
                           ? 'bg-emerald-600 text-white shadow-md'
-                          : 'bg-muted text-muted-foreground hover:bg-accent'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-accent hover:text-foreground'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="w-4 h-4" />
                       <span>{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           {/* Content Area */}
@@ -579,7 +722,7 @@ export default function HomePage() {
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav - UNCHANGED */}
       <nav className="no-print lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border px-2 py-1 flex justify-around safe-area-bottom">
         <button onClick={() => setShowProjectsPanel(true)} className="flex flex-col items-center gap-0.5 py-1 px-2 text-muted-foreground">
           <Building2 className="w-5 h-5" />
@@ -672,67 +815,145 @@ export default function HomePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Projects Panel (Mobile) */}
+      {/* Projects Panel (Mobile) - with Project Management */}
       <Dialog open={showProjectsPanel} onOpenChange={setShowProjectsPanel}>
         <DialogContent dir={isRTL ? 'rtl' : 'ltr'} className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t.projects}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              {t.projects}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {projects.map((p: { id: string; name: string; is_current: boolean }) => (
-              <div
-                key={p.id}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                  p.id === currentProjectId ? 'bg-primary/10 border border-primary/20' : 'hover:bg-accent border border-transparent'
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 text-xs gap-1.5"
+              onClick={handleSaveLocally}
+              disabled={!currentProjectId}
+            >
+              <Download className="w-4 h-4 shrink-0" />
+              <span>حفظ محلي</span>
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={handleSaveToDB}
+              disabled={!currentProjectId}
+            >
+              <Database className="w-4 h-4 shrink-0" />
+              <span>حفظ في قاعدة البيانات</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 text-xs gap-1.5"
+              onClick={() => { setShowProjectsPanel(false); setShowNewProject(true); }}
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>مشروع جديد</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-9 text-xs gap-1.5"
+              onClick={fetchProjects}
+            >
+              <RefreshCw className={`w-4 h-4 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>تحديث البيانات</span>
+            </Button>
+          </div>
+
+          <Separator className="mb-2" />
+
+          {/* Project List with Accordion */}
+          <div className="max-h-72 overflow-y-auto">
+            <button
+              onClick={() => setAccordionOpen(!accordionOpen)}
+              className="flex items-center justify-between w-full py-2 px-3 rounded-md hover:bg-accent transition-all duration-200 mb-1"
+            >
+              <span className="text-sm font-medium text-muted-foreground">المشاريع المحفوظة ({projects.length})</span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                  accordionOpen ? 'rotate-180' : ''
                 }`}
-                onClick={() => handleSelectProject(p.id)}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {p.is_current && <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />}
-                  <span className="truncate text-sm">{p.name}</span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditProjectId(p.id);
-                      setEditProjectName(p.name);
-                      setShowProjectsPanel(false);
-                    }}
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteProjectId(p.id);
-                      setShowProjectsPanel(false);
-                    }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+              />
+            </button>
+
+            <div
+              className={`grid transition-all duration-200 ease-in-out ${
+                accordionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+              }`}
+              style={{ transitionProperty: 'grid-template-rows, opacity' }}
+            >
+              <div className="overflow-hidden min-h-0">
+                <div className="space-y-1.5">
+                  {projects.map((p: { id: string; name: string; is_current: boolean }) => (
+                    <div
+                      key={p.id}
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all duration-150 ${
+                        p.id === currentProjectId
+                          ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                          : 'hover:bg-accent border border-transparent'
+                      }`}
+                    >
+                      <button
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                        onClick={() => handleSelectProject(p.id)}
+                        title="📂 تحميل المشروع"
+                      >
+                        <FolderOpen
+                          className={`w-4 h-4 shrink-0 ${
+                            p.id === currentProjectId
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-muted-foreground'
+                          }`}
+                        />
+                        <span className="truncate text-sm">{p.name}</span>
+                        {p.is_current && (
+                          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                        )}
+                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditProjectId(p.id);
+                            setEditProjectName(p.name);
+                            setShowProjectsPanel(false);
+                          }}
+                          title="✏️ تعديل"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteProjectId(p.id);
+                            setShowProjectsPanel(false);
+                          }}
+                          title="🗑️ حذف"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {projects.length === 0 && (
+                    <p className="text-center text-muted-foreground py-4 text-sm">{t.noProjects}</p>
+                  )}
                 </div>
               </div>
-            ))}
-            {projects.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">{t.noProjects}</p>
-            )}
+            </div>
           </div>
-          <DialogFooter>
-            <Button
-              onClick={() => { setShowProjectsPanel(false); setShowNewProject(true); }}
-              className="w-full"
-            >
-              <Plus className="w-4 h-4 me-2" />
-              {t.newProject}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

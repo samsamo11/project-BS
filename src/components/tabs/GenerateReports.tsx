@@ -1,429 +1,328 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { FileOutput, Printer } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { useTranslation } from '@/lib/i18n';
+import { useProjectStore } from '@/stores';
+import {
+  FileOutput,
+  Printer,
+  FileDown,
+  Settings2,
+  ListChecks,
+  Building2,
+  DraftingCompass,
+  HardHat,
+  Layers,
+  Columns3,
+  Palette,
+  PlugZap,
+  Pipette,
+  ClipboardList,
+  FileText,
+  Eye,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
+// ======== Types ========
 interface GenerateReportsProps {
   projectData: Record<string, unknown>;
 }
 
-interface ReportType {
+interface SectionOption {
   id: string;
-  title: string;
-  description: string;
+  label: string;
   dataKey: string;
   icon: React.ReactNode;
 }
 
-const reportTypes: ReportType[] = [
-  {
-    id: 'building-data',
-    title: 'بيانات المنشأة',
-    description: 'معلومات أساسية عن المنشأة ومواصفاتها العامة',
-    dataKey: 'building_data',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="16" height="20" x="4" y="2" rx="2" ry="2" />
-        <path d="M9 22v-4h6v4" />
-        <path d="M8 6h.01" />
-        <path d="M16 6h.01" />
-        <path d="M12 6h.01" />
-        <path d="M12 10h.01" />
-        <path d="M12 14h.01" />
-        <path d="M16 10h.01" />
-        <path d="M16 14h.01" />
-        <path d="M8 10h.01" />
-        <path d="M8 14h.01" />
-      </svg>
-    ),
-  },
-  {
-    id: 'architectural-report',
-    title: 'التقرير المعماري',
-    description: 'التقييم المعماري الشامل للمنشأة',
-    dataKey: 'architectural_report',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 20h20" />
-        <path d="M5 20V8l7-5 7 5v12" />
-        <path d="M9 20v-6h6v6" />
-      </svg>
-    ),
-  },
-  {
-    id: 'structural-report',
-    title: 'التقرير الإنشائي',
-    description: 'التقييم الإنشائي وتحليل العناصر الخرسانية',
-    dataKey: 'structural_report',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 21h18" />
-        <path d="M5 21V7l8-4v18" />
-        <path d="M19 21V11l-6-4" />
-        <path d="M9 9h.01" />
-        <path d="M9 12h.01" />
-        <path d="M9 15h.01" />
-        <path d="M9 18h.01" />
-      </svg>
-    ),
-  },
-  {
-    id: 'foundations',
-    title: 'الأساسات',
-    description: 'تقرير فحص وتقييم الأساسات',
-    dataKey: 'foundations',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect width="16" height="20" x="4" y="2" rx="2" />
-        <path d="M4 22h16" />
-        <path d="M8 22v-4h8v4" />
-      </svg>
-    ),
-  },
-  {
-    id: 'columns-walls',
-    title: 'الأعمدة والجدران',
-    description: 'فحص وتقييم الأعمدة والجدران الحاملة',
-    dataKey: 'columns_walls',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="4" y="2" width="16" height="20" rx="2" />
-        <line x1="4" y1="8" x2="20" y2="8" />
-        <line x1="4" y1="14" x2="20" y2="14" />
-        <line x1="12" y1="2" x2="12" y2="22" />
-      </svg>
-    ),
-  },
-  {
-    id: 'beam-slab',
-    title: 'الجوائز والبلاطات',
-    description: 'فحص وتقييم الجوائز والبلاطات',
-    dataKey: 'beam_slab',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 20h20" />
-        <path d="M4 16V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8" />
-        <path d="M12 4v12" />
-        <path d="M2 20v2" />
-        <path d="M22 20v2" />
-      </svg>
-    ),
-  },
-  {
-    id: 'electrical-report',
-    title: 'التقرير الكهربائي',
-    description: 'تقييم النظام الكهربائي والتمديدات',
-    dataKey: 'electrical',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
-      </svg>
-    ),
-  },
-  {
-    id: 'plumbing-report',
-    title: 'التقرير الصحي',
-    description: 'تقييم شبكة المياه والصرف الصحي',
-    dataKey: 'plumbing',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v20" />
-        <path d="M2 12h20" />
-        <path d="m4.93 4.93 14.14 14.14" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  {
-    id: 'technical-notes',
-    title: 'الملاحظات الفنية',
-    description: 'الملاحظات والتوصيات الفنية الميدانية',
-    dataKey: 'technical_notes',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
-      </svg>
-    ),
-  },
-  {
-    id: 'final-report',
-    title: 'التقرير النهائي',
-    description: 'التقرير الشامل الختامي مع التوصيات',
-    dataKey: 'final_report',
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" y1="13" x2="8" y2="13" />
-        <line x1="16" y1="17" x2="8" y2="17" />
-        <path d="M10 9H8" />
-      </svg>
-    ),
-  },
+// ======== Section Options ========
+const SECTION_OPTIONS: SectionOption[] = [
+  { id: 'buildingData', label: 'بيانات المنشأة', dataKey: 'building_data', icon: <Building2 className="h-4 w-4" /> },
+  { id: 'architecturalReport', label: 'التقرير الوصفي المعماري', dataKey: 'architectural_report', icon: <DraftingCompass className="h-4 w-4" /> },
+  { id: 'structuralReport', label: 'التقرير الفني الانشائي', dataKey: 'structural_report', icon: <HardHat className="h-4 w-4" /> },
+  { id: 'foundations', label: 'الأساسات', dataKey: 'foundations', icon: <Layers className="h-4 w-4" /> },
+  { id: 'columnsWalls', label: 'الأعمدة والجدران', dataKey: 'columns_walls', icon: <Columns3 className="h-4 w-4" /> },
+  { id: 'beamSlab', label: 'الجوائز والبلاطات', dataKey: 'beam_slab', icon: <Palette className="h-4 w-4" /> },
+  { id: 'electricalReport', label: 'التقرير الكهربائي', dataKey: 'electrical', icon: <PlugZap className="h-4 w-4" /> },
+  { id: 'plumbingReport', label: 'التقرير الصحي', dataKey: 'plumbing', icon: <Pipette className="h-4 w-4" /> },
+  { id: 'technicalNotes', label: 'الملاحظات الفنية', dataKey: 'technical_notes', icon: <ClipboardList className="h-4 w-4" /> },
+  { id: 'finalReport', label: 'التقرير الفني النهائي', dataKey: 'final_report', icon: <FileText className="h-4 w-4" /> },
 ];
 
+// ======== Component ========
 export default function GenerateReports({ projectData }: GenerateReportsProps) {
-  const [printingReport, setPrintingReport] = useState<string | null>(null);
-  const printRef = useRef<HTMLDivElement>(null);
+  const { isRTL } = useTranslation();
+  const {
+    reportPreferences,
+    setReportPreferences,
+  } = useProjectStore();
 
-  const getSectionData = (dataKey: string): Record<string, unknown> => {
-    const data = projectData[dataKey];
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      return data as Record<string, unknown>;
-    }
-    return {};
-  };
+  const [companyName, setCompanyName] = useState(reportPreferences.companyName);
+  const [reportHeader, setReportHeader] = useState(reportPreferences.reportHeader);
+  const [reportFooter, setReportFooter] = useState(reportPreferences.reportFooter);
+  const [selectedSections, setSelectedSections] = useState<string[]>(reportPreferences.selectedSections);
 
-  const hasDataForSection = (dataKey: string): boolean => {
-    const sectionData = projectData[dataKey];
-    if (!sectionData) return false;
-    return Object.keys(sectionData).length > 0;
-  };
+  // Auto-save preferences on change
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setReportPreferences({
+        companyName,
+        reportHeader,
+        reportFooter,
+        selectedSections,
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [companyName, reportHeader, reportFooter, selectedSections, setReportPreferences]);
 
-  const renderSectionContent = (report: ReportType) => {
-    const sectionData = getSectionData(report.dataKey);
-
-    if (!hasDataForSection(report.dataKey)) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <p className="text-sm">لا توجد بيانات متاحة لهذا القسم</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        {Object.entries(sectionData).map(([key, value]) => {
-          if (key === 'id') return null;
-          const displayValue = Array.isArray(value)
-            ? (value as unknown[]).map((item, i) => {
-                if (typeof item === 'object' && item !== null) {
-                  return (
-                    <div key={i} className="text-sm bg-muted/50 p-3 rounded-lg mt-1 space-y-1">
-                      {Object.entries(item as Record<string, unknown>).map(([k, v]) => (
-                        <div key={k} className="flex gap-2">
-                          <span className="font-medium text-foreground/70">{String(k)}:</span>
-                          <span className="text-foreground/90">{String(v)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                }
-                return <span key={i} className="text-sm">{String(item)}, </span>;
-              })
-            : String(value);
-
-          return (
-            <div key={key} className="flex flex-col gap-1 py-2 border-b border-border/40 last:border-0">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {key}
-              </span>
-              <span className="text-sm text-foreground/90">{displayValue}</span>
-            </div>
-          );
-        })}
-      </div>
+  // Toggle section selection
+  const toggleSection = useCallback((sectionId: string) => {
+    setSelectedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((s) => s !== sectionId)
+        : [...prev, sectionId]
     );
-  };
+  }, []);
 
-  const handlePrint = (report: ReportType) => {
-    setPrintingReport(report.id);
-    // Give React time to render the print content, then trigger print
+  // Select all / deselect all
+  const selectAll = useCallback(() => {
+    setSelectedSections(SECTION_OPTIONS.map((s) => s.id));
+  }, []);
+
+  const deselectAll = useCallback(() => {
+    setSelectedSections([]);
+  }, []);
+
+  // Check if section has data
+  const hasDataForSection = useCallback(
+    (dataKey: string): boolean => {
+      const sectionData = projectData[dataKey];
+      if (!sectionData) return false;
+      return Object.keys(sectionData).length > 0;
+    },
+    [projectData]
+  );
+
+  // Print preview
+  const handlePrintPreview = useCallback(() => {
+    if (selectedSections.length === 0) {
+      toast.error('يرجى اختيار قسم واحد على الأقل');
+      return;
+    }
+    window.print();
+  }, [selectedSections]);
+
+  // Download PDF (placeholder using window.print)
+  const handleDownloadPDF = useCallback(() => {
+    if (selectedSections.length === 0) {
+      toast.error('يرجى اختيار قسم واحد على الأقل');
+      return;
+    }
+    // Placeholder: use window.print() as PDF generation method
+    // TODO: implement with @react-pdf/renderer
+    toast.info('يتم إنشاء ملف PDF... (استخدام معاينة الطباعة مؤقتاً)');
     setTimeout(() => {
       window.print();
-      // Small delay before resetting to allow print dialog to open
-      setTimeout(() => {
-        setPrintingReport(null);
-      }, 500);
-    }, 100);
-  };
+    }, 500);
+  }, [selectedSections]);
 
-  const handleGenerateAll = () => {
-    setPrintingReport('all');
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        setPrintingReport(null);
-      }, 500);
-    }, 100);
-  };
+  const labelClass = 'text-sm font-medium text-foreground/80';
+  const helperClass = 'text-xs text-muted-foreground';
 
   return (
-    <>
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-area, .print-area * {
-            visibility: visible;
-          }
-          .print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 20px;
-            background: white;
-            display: block !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-card {
-            border: 1px solid #e5e7eb !important;
-            box-shadow: none !important;
-            break-inside: avoid;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
+    <div className="space-y-6">
+      {/* ===== Section 1: تفضيلات المستخدم ===== */}
+      <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Settings2 className="h-5 w-5" />
+            </div>
+            <span>توليد التقارير</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          {/* اسم المكتب/الشركة */}
+          <div className="space-y-2">
+            <Label className={labelClass}>اسم المكتب / الشركة</Label>
+            <p className={helperClass}>سيظهر في ترويسة التقرير المطبوع</p>
+            <Input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="مثال: مكتب هندسة الإنشائية — دمشق"
+              className="w-full"
+              dir={isRTL ? 'rtl' : 'ltr'}
+            />
+          </div>
 
-      <div className="space-y-6 no-print">
-        {/* Header */}
-        <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-4">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <FileOutput className="h-5 w-5" />
-              </div>
-              <span>توليد التقارير</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+          {/* ترويسة التقرير */}
+          <div className="space-y-2">
+            <Label className={labelClass}>ترويسة التقرير النهائي</Label>
+            <p className={helperClass}>نص يظهر في أعلى كل صفحة من التقرير</p>
+            <Textarea
+              value={reportHeader}
+              onChange={(e) => setReportHeader(e.target.value)}
+              placeholder="أدخل نص الترويسة هنا...&#10;مثال: تقرير تقييم فني شامل للمنشأة المذكورة أدناه"
+              className="min-h-[100px] resize-y"
+              dir={isRTL ? 'rtl' : 'ltr'}
+            />
+          </div>
+
+          {/* تذييل التقرير */}
+          <div className="space-y-2">
+            <Label className={labelClass}>تذييل / نهاية التقرير</Label>
+            <p className={helperClass}>نص يظهر في نهاية التقرير</p>
+            <Textarea
+              value={reportFooter}
+              onChange={(e) => setReportFooter(e.target.value)}
+              placeholder="أدخل نص التذييل هنا...&#10;مثال: تم إعداد هذا التقرير وفقاً للكود العربي السوري 2024"
+              className="min-h-[80px] resize-y"
+              dir={isRTL ? 'rtl' : 'ltr'}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ===== Section 2: اختيار الواجهات ===== */}
+      <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <ListChecks className="h-5 w-5" />
+            </div>
+            <span>اختيار الواجهات</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Select All / Deselect All */}
+          <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-muted-foreground">
-              اختر التقرير الذي تريد طباعته أو توليد التقرير الشامل الكامل
+              اختر الأقسام المراد تضمينها في التقرير
+              <span className="ms-2 font-medium text-foreground">
+                ({selectedSections.length}/{SECTION_OPTIONS.length})
+              </span>
             </p>
-          </CardContent>
-        </Card>
-
-        {/* Generate All Button */}
-        <div className="flex justify-center">
-          <Button
-            onClick={handleGenerateAll}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 px-8 py-3 text-base"
-          >
-            <FileOutput className="h-5 w-5 me-2" />
-            توليد التقرير الشامل
-          </Button>
-        </div>
-
-        {/* Report Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {reportTypes.map((report) => {
-            const hasData = hasDataForSection(report.dataKey);
-            return (
-              <Card
-                key={report.id}
-                className={`border-emerald-200/50 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 ${
-                  !hasData ? 'opacity-60' : ''
-                }`}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                onClick={selectAll}
               >
-                <CardContent className="p-5 flex flex-col justify-between h-full gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0 dark:bg-emerald-900/20 dark:text-emerald-400">
-                      {report.icon}
+                تحديد الكل
+              </Button>
+              <Separator orientation="vertical" className="h-4" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={deselectAll}
+              >
+                إلغاء الكل
+              </Button>
+            </div>
+          </div>
+
+          {/* Section Checkboxes */}
+          <div className="space-y-1">
+            {SECTION_OPTIONS.map((section) => {
+              const isChecked = selectedSections.includes(section.id);
+              const hasData = hasDataForSection(section.dataKey);
+
+              return (
+                <label
+                  key={section.id}
+                  htmlFor={`section-${section.id}`}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150 border ${
+                    isChecked
+                      ? 'bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-800'
+                      : 'hover:bg-muted/50 border-transparent'
+                  }`}
+                >
+                  <Checkbox
+                    id={`section-${section.id}`}
+                    checked={isChecked}
+                    onCheckedChange={() => toggleSection(section.id)}
+                    className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                  />
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className={`p-1.5 rounded-lg shrink-0 ${
+                        isChecked
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {section.icon}
                     </div>
-                    <div className="space-y-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-foreground leading-tight">
-                        {report.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {report.description}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${isChecked ? 'text-foreground' : 'text-foreground/70'}`}>
+                        {section.label}
                       </p>
                     </div>
+                    {!hasData && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground shrink-0">
+                        لا توجد بيانات
+                      </span>
+                    )}
                   </div>
-
-                  <div className="flex items-center justify-between mt-auto pt-2">
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${
-                      hasData
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {hasData ? 'بيانات متاحة' : 'لا توجد بيانات'}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePrint(report)}
-                      className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-700 dark:hover:bg-emerald-900/20"
-                    >
-                      <Printer className="h-4 w-4 me-1.5" />
-                      طباعة
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Print Area - Hidden on screen, visible on print */}
-      <div className="print-area" style={{ display: 'none' }} ref={printRef}>
-        <div className="text-center mb-8 pb-4 border-b-2 border-gray-300">
-          <h1 className="text-2xl font-bold mb-1">تقرير تقييم المنشأة</h1>
-          <p className="text-sm text-gray-600">B.S Evaluation - Structural Engineering Report</p>
-          <p className="text-xs text-gray-500 mt-2">
-            {new Date().toLocaleDateString('ar-SY', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-
-        {printingReport === 'all' ? (
-          <div>
-            {reportTypes.map((report) => (
-              <div key={report.id} className="print-card mb-8 p-6 border rounded-xl">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-                  <div className="text-emerald-600">
-                    {report.icon}
-                  </div>
-                  <h2 className="text-lg font-bold">{report.title}</h2>
-                </div>
-                {renderSectionContent(report)}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="print-card p-6 border rounded-xl">
-            {printingReport && (() => {
-              const currentReport = reportTypes.find(r => r.id === printingReport);
-              if (!currentReport) return null;
-              return (
-                <>
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
-                    <div className="text-emerald-600">
-                      {currentReport.icon}
-                    </div>
-                    <h2 className="text-lg font-bold">{currentReport.title}</h2>
-                  </div>
-                  {renderSectionContent(currentReport)}
-                </>
+                </label>
               );
-            })()}
+            })}
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        <div className="mt-8 pt-4 border-t-2 border-gray-300 text-center text-xs text-gray-500">
-          <p>تم إنشاء هذا التقرير بواسطة نظام B.S Evaluation</p>
-          <p>الكود العربي السوري نسخة 2024</p>
-        </div>
-      </div>
-    </>
+      {/* ===== Section 3: إجراءات ===== */}
+      <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-emerald-700 to-teal-700 text-white pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <FileOutput className="h-5 w-5" />
+            </div>
+            <span>إجراءات</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* معاينة قبل الطباعة */}
+            <Button
+              onClick={handlePrintPreview}
+              disabled={selectedSections.length === 0}
+              className="h-auto py-4 flex flex-col items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:shadow-none"
+            >
+              <Eye className="h-6 w-6" />
+              <span className="text-sm font-medium">معاينة قبل الطباعة</span>
+              <span className="text-[10px] opacity-80">فتح نافذة معاينة الطباعة</span>
+            </Button>
+
+            {/* تحميل ملف PDF */}
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={selectedSections.length === 0}
+              variant="outline"
+              className="h-auto py-4 flex flex-col items-center gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-50 transition-all duration-200"
+            >
+              <FileDown className="h-6 w-6" />
+              <span className="text-sm font-medium">تحميل ملف PDF</span>
+              <span className="text-[10px] text-muted-foreground">إنشاء وتحميل ملف PDF</span>
+            </Button>
+          </div>
+
+          {selectedSections.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground mt-3">
+              يرجى اختيار قسم واحد على الأقل من الأقسام أعلاه
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -145,6 +145,20 @@ interface ProjectData {
   final_report: Record<string, unknown>;
 }
 
+export interface ReportPreferences {
+  companyName: string;
+  reportHeader: string;
+  reportFooter: string;
+  selectedSections: string[];
+}
+
+const defaultReportPreferences: ReportPreferences = {
+  companyName: '',
+  reportHeader: '',
+  reportFooter: '',
+  selectedSections: [],
+};
+
 interface ProjectStore {
   projects: Array<{
     id: string;
@@ -156,10 +170,12 @@ interface ProjectStore {
   }>;
   currentProjectId: string | null;
   projectData: ProjectData;
+  reportPreferences: ReportPreferences;
   isLoading: boolean;
   setProjects: (projects: ProjectStore['projects']) => void;
   setCurrentProjectId: (id: string | null) => void;
   updateProjectData: (section: keyof ProjectData, data: Record<string, unknown>) => void;
+  setReportPreferences: (prefs: Partial<ReportPreferences>) => void;
   setLoading: (loading: boolean) => void;
   resetProjectData: () => void;
 }
@@ -181,12 +197,17 @@ export const useProjectStore = create<ProjectStore>()((set) => ({
   projects: [],
   currentProjectId: null,
   projectData: { ...defaultProjectData },
+  reportPreferences: { ...defaultReportPreferences },
   isLoading: false,
   setProjects: (projects) => set({ projects }),
   setCurrentProjectId: (id) => set({ currentProjectId: id, projectData: { ...defaultProjectData } }),
   updateProjectData: (section, data) =>
     set((state) => ({
       projectData: { ...state.projectData, [section]: { ...state.projectData[section], ...data } },
+    })),
+  setReportPreferences: (prefs) =>
+    set((state) => ({
+      reportPreferences: { ...state.reportPreferences, ...prefs },
     })),
   setLoading: (isLoading) => set({ isLoading }),
   resetProjectData: () => set({ projectData: { ...defaultProjectData } }),

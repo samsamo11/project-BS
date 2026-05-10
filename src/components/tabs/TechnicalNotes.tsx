@@ -1,301 +1,537 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useTranslation } from '@/lib/i18n';
-import { ClipboardCheck, Plus, Trash2 } from 'lucide-react';
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from '@/lib/constants';
+import { ClipboardCheck, Camera, X, Save, Pencil, Building2, HardHat, Zap, Droplets } from 'lucide-react';
+
+// ===================== Types =====================
 
 interface TechnicalNotesProps {
   data: Record<string, unknown>;
   onSave: (data: Record<string, unknown>) => void;
 }
 
-interface ObservationEntry {
-  id: string;
-  number: string;
+interface TechnicalNotesData {
+  architecturalNotes: {
+    humidityMarks: string;
+    visibleWaterLeakage: string;
+    poorVentilation: string;
+    insulationCondition: string;
+    exteriorCladding: string;
+  };
+  structuralNotes: {
+    visibleRebarCorrosion: string;
+    slabBeamSettlement: string;
+    columnWallTilt: string;
+    concreteCoverSpalling: string;
+  };
+  electricalNotes: {
+    electricalInstallations: string;
+    fireSuppression: string;
+    surveillanceSystem: string;
+  };
+  plumbingNotes: {
+    plumbingInstallations: string;
+  };
   location: string;
-  description: string;
-  severity: string;
-  priority: string;
-  photos: string;
-  additionalNotes: string;
+  photos: string[];
+  recommendations: string;
 }
 
-const defaultObservationEntry = (index: number): ObservationEntry => ({
-  id: crypto.randomUUID(),
-  number: String(index + 1),
+// ===================== Constants =====================
+
+const DEFAULT_ARCHITECTURAL = {
+  humidityMarks: '',
+  visibleWaterLeakage: '',
+  poorVentilation: '',
+  insulationCondition: '',
+  exteriorCladding: '',
+};
+
+const DEFAULT_STRUCTURAL = {
+  visibleRebarCorrosion: '',
+  slabBeamSettlement: '',
+  columnWallTilt: '',
+  concreteCoverSpalling: '',
+};
+
+const DEFAULT_ELECTRICAL = {
+  electricalInstallations: '',
+  fireSuppression: '',
+  surveillanceSystem: '',
+};
+
+const DEFAULT_PLUMBING = {
+  plumbingInstallations: '',
+};
+
+const DEFAULT_DATA: TechnicalNotesData = {
+  architecturalNotes: { ...DEFAULT_ARCHITECTURAL },
+  structuralNotes: { ...DEFAULT_STRUCTURAL },
+  electricalNotes: { ...DEFAULT_ELECTRICAL },
+  plumbingNotes: { ...DEFAULT_PLUMBING },
   location: '',
-  description: '',
-  severity: '',
-  priority: '',
-  photos: '',
-  additionalNotes: '',
-});
+  photos: [],
+  recommendations: '',
+};
 
-const severityOptions = [
-  { value: 'جيد', label: 'جيد' },
-  { value: 'متوسط', label: 'متوسط' },
-  { value: 'سيء', label: 'سيء' },
-  { value: 'حرج', label: 'حرج' },
-];
+function safeAssign<T extends Record<string, string>>(target: T, source: unknown): T {
+  const result = { ...target };
+  if (source && typeof source === 'object') {
+    Object.keys(target).forEach((key) => {
+      const val = (source as Record<string, unknown>)[key];
+      if (typeof val === 'string') {
+        result[key] = val;
+      }
+    });
+  }
+  return result;
+}
 
-const priorityOptions = [
-  { value: 'عالية', label: 'عالية' },
-  { value: 'متوسطة', label: 'متوسطة' },
-  { value: 'منخفضة', label: 'منخفضة' },
-];
+function computeInitialData(data: Record<string, unknown>): TechnicalNotesData {
+  const result: TechnicalNotesData = { ...DEFAULT_DATA };
+  if (data && typeof data === 'object') {
+    result.architecturalNotes = safeAssign(DEFAULT_ARCHITECTURAL, data.architecturalNotes);
+    result.structuralNotes = safeAssign(DEFAULT_STRUCTURAL, data.structuralNotes);
+    result.electricalNotes = safeAssign(DEFAULT_ELECTRICAL, data.electricalNotes);
+    result.plumbingNotes = safeAssign(DEFAULT_PLUMBING, data.plumbingNotes);
+    if (typeof data.location === 'string') result.location = data.location;
+    if (typeof data.recommendations === 'string') result.recommendations = data.recommendations;
+    if (Array.isArray(data.photos)) result.photos = data.photos as string[];
+  }
+  return result;
+}
+
+// ===================== Image Upload Helper =====================
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ===================== Main Component =====================
 
 export default function TechnicalNotes({ data, onSave }: TechnicalNotesProps) {
   const { isRTL } = useTranslation();
 
-  const [observations, setObservations] = useState<ObservationEntry[]>(() => {
-    if (data.observations && Array.isArray(data.observations)) {
-      return (data.observations as ObservationEntry[]).map((obs, i) => ({
-        ...obs,
-        number: obs.number || String(i + 1),
-      }));
-    }
-    return [defaultObservationEntry(0)];
-  });
-
-  const [overallAssessment, setOverallAssessment] = useState(
-    () => (data.overallAssessment ? String(data.overallAssessment) : '')
-  );
-  const [technicalRecommendations, setTechnicalRecommendations] = useState(
-    () => (data.technicalRecommendations ? String(data.technicalRecommendations) : '')
-  );
+  const [formData, setFormData] = useState<TechnicalNotesData>(() => computeInitialData(data));
+  const [isEditing, setIsEditing] = useState(false);
+  const [pendingData, setPendingData] = useState<TechnicalNotesData | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Sync state when data prop changes (e.g., project switch)
   const [prevData, setPrevData] = useState(data);
   if (prevData !== data) {
     setPrevData(data);
-    if (data.observations && Array.isArray(data.observations)) {
-      setObservations(
-        (data.observations as ObservationEntry[]).map((obs, i) => ({
-          ...obs,
-          number: obs.number || String(i + 1),
-        }))
-      );
-    } else {
-      setObservations([defaultObservationEntry(0)]);
-    }
-    setOverallAssessment(data.overallAssessment ? String(data.overallAssessment) : '');
-    setTechnicalRecommendations(
-      data.technicalRecommendations ? String(data.technicalRecommendations) : ''
-    );
+    setFormData(computeInitialData(data));
+    setIsEditing(false);
+    setPendingData(null);
   }
 
-  // Auto-save on blur
-  const handleBlur = useCallback(() => {
-    onSave({
-      observations,
-      overallAssessment,
-      technicalRecommendations,
-    });
-  }, [observations, overallAssessment, technicalRecommendations, onSave]);
+  // ---- Change Handlers ----
 
-  const addObservation = () => {
-    setObservations((prev) => [
+  const updateArchitectural = useCallback((field: keyof typeof DEFAULT_ARCHITECTURAL, value: string) => {
+    setFormData((prev) => ({
       ...prev,
-      defaultObservationEntry(prev.length),
-    ]);
-  };
+      architecturalNotes: { ...prev.architecturalNotes, [field]: value },
+    }));
+  }, []);
 
-  const removeObservation = (id: string) => {
-    if (observations.length <= 1) return;
-    setObservations((prev) => {
-      const filtered = prev.filter((obs) => obs.id !== id);
-      return filtered.map((obs, i) => ({ ...obs, number: String(i + 1) }));
-    });
-  };
+  const updateStructural = useCallback((field: keyof typeof DEFAULT_STRUCTURAL, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      structuralNotes: { ...prev.structuralNotes, [field]: value },
+    }));
+  }, []);
 
-  const updateObservation = (
-    id: string,
-    field: keyof ObservationEntry,
-    value: string
-  ) => {
-    setObservations((prev) =>
-      prev.map((obs) => (obs.id === id ? { ...obs, [field]: value } : obs))
-    );
-  };
+  const updateElectrical = useCallback((field: keyof typeof DEFAULT_ELECTRICAL, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      electricalNotes: { ...prev.electricalNotes, [field]: value },
+    }));
+  }, []);
 
-  const handleSave = () => {
-    onSave({
-      observations,
-      overallAssessment,
-      technicalRecommendations,
-    });
-  };
+  const updatePlumbing = useCallback((field: keyof typeof DEFAULT_PLUMBING, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      plumbingNotes: { ...prev.plumbingNotes, [field]: value },
+    }));
+  }, []);
 
-  const selectField = (
+  const updateField = useCallback((field: keyof TechnicalNotesData, value: unknown) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  // ---- Image Handlers ----
+
+  const handleImageUpload = useCallback(async (files: FileList | null) => {
+    if (!files) return;
+    const fileArr = Array.from(files);
+    for (const file of fileArr) {
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) continue;
+      if (file.size > MAX_IMAGE_SIZE) continue;
+      if (formData.photos.length >= 5) continue;
+      const base64 = await fileToBase64(file);
+      setFormData((prev) => ({
+        ...prev,
+        photos: [...prev.photos, base64],
+      }));
+    }
+  }, [formData.photos.length]);
+
+  const removeImage = useCallback((index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      photos: prev.photos.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  // ---- Save / Edit ----
+
+  const handleSave = useCallback(() => {
+    onSave(formData as unknown as Record<string, unknown>);
+    setIsEditing(false);
+    setPendingData(null);
+  }, [formData, onSave]);
+
+  const handleEdit = useCallback(() => {
+    setPendingData({ ...formData });
+    setIsEditing(true);
+  }, [formData]);
+
+  const handleCancelEdit = useCallback(() => {
+    if (pendingData) {
+      setFormData(pendingData);
+    }
+    setIsEditing(false);
+    setPendingData(null);
+  }, [pendingData]);
+
+  // ===================== Render Helpers =====================
+
+  const renderTextareaField = (
     label: string,
     value: string,
     onChange: (val: string) => void,
-    options: { value: string; label: string }[],
-    placeholder?: string
+    placeholder?: string,
+    helperText?: string
   ) => (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-foreground/70">{label}</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={placeholder || 'اختر'} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="min-h-[70px] resize-y text-sm"
+        dir={isRTL ? 'rtl' : 'ltr'}
+        disabled={!isEditing}
+      />
+      {helperText && <p className="text-[10px] text-gray-400">{helperText}</p>}
     </div>
   );
 
+  const renderImageUpload = (
+    images: string[],
+    onUpload: (files: FileList | null) => void,
+    onRemove: (index: number) => void,
+    maxImages: number
+  ) => (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 gap-2 text-xs"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={images.length >= maxImages || !isEditing}
+        >
+          <Camera className="w-4 h-4" />
+          إضافة صور ({images.length}/{maxImages})
+        </Button>
+        <span className="text-[10px] text-gray-400">الحد الأقصى 1MB لكل صورة</span>
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ALLOWED_IMAGE_TYPES.join(',')}
+        multiple
+        className="hidden"
+        onChange={(e) => onUpload(e.target.files)}
+      />
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {images.map((img, idx) => (
+            <div
+              key={idx}
+              className="relative group rounded-lg overflow-hidden border border-border/50 bg-muted/20 aspect-square"
+            >
+              <img
+                src={img}
+                alt={`صورة ${idx + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(idx)}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ===================== Category Renderers =====================
+
+  const renderArchitecturalCategory = () => (
+    <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-amber-500 to-orange-500 text-white pb-4">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Building2 className="h-5 w-5" />
+          </div>
+          <span>ملاحظات معمارية</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5">
+        <div className="space-y-4">
+          {renderTextareaField(
+            'آثار رطوبة في الجدران والأسقف',
+            formData.architecturalNotes.humidityMarks,
+            (v) => updateArchitectural('humidityMarks', v),
+            'صف وجود آثار رطوبة وموقعها ومدى انتشارها...',
+            'حدد الموقع ومدى الانتشار'
+          )}
+          {renderTextareaField(
+            'تسريب مياه ظاهر',
+            formData.architecturalNotes.visibleWaterLeakage,
+            (v) => updateArchitectural('visibleWaterLeakage', v),
+            'صف التسريبات الظاهرة ومصدرها...',
+            'حدد المصدر والشدة والموقع'
+          )}
+          {renderTextareaField(
+            'ضعف التهوية الطبيعية',
+            formData.architecturalNotes.poorVentilation,
+            (v) => updateArchitectural('poorVentilation', v),
+            'صف حالة التهوية في المبنى...',
+            'حدد المواقع ذات التهوية الضعيفة'
+          )}
+          {renderTextareaField(
+            'وضع العزل الحراري والمائي',
+            formData.architecturalNotes.insulationCondition,
+            (v) => updateArchitectural('insulationCondition', v),
+            'صف حالة العزل الحراري والمائي...',
+            'نوع العزل وحالته ومدى فعاليته'
+          )}
+          {renderTextareaField(
+            'حالة الواجهات الخارجية والإكساءات',
+            formData.architecturalNotes.exteriorCladding,
+            (v) => updateArchitectural('exteriorCladding', v),
+            'صف حالة الواجهات والإكساءات الخارجية...',
+            'نوع الإكساء وحالته وتلفياته'
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderStructuralCategory = () => (
+    <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-red-500 to-rose-500 text-white pb-4">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <HardHat className="h-5 w-5" />
+          </div>
+          <span>ملاحظات إنشائية</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5">
+        <div className="space-y-4">
+          {renderTextareaField(
+            'صدأ ظاهر في حديد التسليح',
+            formData.structuralNotes.visibleRebarCorrosion,
+            (v) => updateStructural('visibleRebarCorrosion', v),
+            'صف وجود صدأ في حديد التسليح...',
+            'حدد الموقع ومدى الانتشار'
+          )}
+          {renderTextareaField(
+            'هبوط في البلاطات والجوائز',
+            formData.structuralNotes.slabBeamSettlement,
+            (v) => updateStructural('slabBeamSettlement', v),
+            'صف وجود هبوط في البلاطات أو الجوائز...',
+            'حدد مقدار الهبوط والموقع'
+          )}
+          {renderTextareaField(
+            'ميلان في الأعمدة والجدران',
+            formData.structuralNotes.columnWallTilt,
+            (v) => updateStructural('columnWallTilt', v),
+            'صف وجود ميلان في الأعمدة أو الجدران...',
+            'حدد مقدار الميلان واتجاهه'
+          )}
+          {renderTextareaField(
+            'تساقط وتقشر الغطاء البيتوني',
+            formData.structuralNotes.concreteCoverSpalling,
+            (v) => updateStructural('concreteCoverSpalling', v),
+            'صف تساقط أو تقشر الغطاء البيتوني...',
+            'حدد الموقع والمساحة المتأثرة'
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderElectricalCategory = () => (
+    <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white pb-4">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Zap className="h-5 w-5" />
+          </div>
+          <span>ملاحظات كهربائية</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5">
+        <div className="space-y-4">
+          {renderTextareaField(
+            'حالة التمديدات الكهربائية',
+            formData.electricalNotes.electricalInstallations,
+            (v) => updateElectrical('electricalInstallations', v),
+            'صف حالة التمديدات الكهربائية...',
+            'نوع التمديدات وحالتها العامة'
+          )}
+          {renderTextareaField(
+            'حالة منظومة الإطفاء',
+            formData.electricalNotes.fireSuppression,
+            (v) => updateElectrical('fireSuppression', v),
+            'صف حالة منظومة الإطفاء...',
+            'نوع المنظومة وحالتها ومدى صلاحيتها'
+          )}
+          {renderTextareaField(
+            'حالة منظومة المراقبة',
+            formData.electricalNotes.surveillanceSystem,
+            (v) => updateElectrical('surveillanceSystem', v),
+            'صف حالة منظومة المراقبة والكاميرات...',
+            'عدد الكاميرات وحالتها وتغطيتها'
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderPlumbingCategory = () => (
+    <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white pb-4">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Droplets className="h-5 w-5" />
+          </div>
+          <span>ملاحظات صحية</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-5">
+        {renderTextareaField(
+          'حالة التمديدات الصحية',
+          formData.plumbingNotes.plumbingInstallations,
+          (v) => updatePlumbing('plumbingInstallations', v),
+          'صف حالة التمديدات الصحية...',
+          'نوع المواسير وحالتها العامة'
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  // ===================== Main Render =====================
+
   return (
-    <div className="space-y-6">
-      {/* Observations List */}
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Header Card */}
       <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <ClipboardCheck className="h-5 w-5" />
-              </div>
-              <span>الملاحظات الفنية</span>
-            </CardTitle>
-            <Button
-              onClick={addObservation}
-              size="sm"
-              className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all"
-            >
-              <Plus className="h-4 w-4 me-1" />
-              إضافة ملاحظة
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <ClipboardCheck className="h-5 w-5" />
+            </div>
+            <span>الملاحظات الفنية</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-5">
-            {observations.map((obs, index) => (
-              <div
-                key={obs.id}
-                className="border border-border/60 rounded-xl p-4 bg-muted/30 space-y-4"
+      </Card>
+
+      {/* Category 1: Architectural Notes */}
+      {renderArchitecturalCategory()}
+
+      {/* Category 2: Structural Notes */}
+      {renderStructuralCategory()}
+
+      {/* Category 3: Electrical Notes */}
+      {renderElectricalCategory()}
+
+      {/* Category 4: Plumbing Notes */}
+      {renderPlumbingCategory()}
+
+      {/* Global: Location & Photos */}
+      <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg">
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                    ملاحظة رقم {index + 1}
-                  </span>
-                  {observations.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => removeObservation(obs.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {selectField(
-                    'الحالة',
-                    obs.severity,
-                    (val) => updateObservation(obs.id, 'severity', val),
-                    severityOptions
-                  )}
-
-                  {selectField(
-                    'الأولوية',
-                    obs.priority,
-                    (val) => updateObservation(obs.id, 'priority', val),
-                    priorityOptions
-                  )}
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground/70">
-                      الموقع
-                    </Label>
-                    <Input
-                      type="text"
-                      value={obs.location}
-                      onChange={(e) =>
-                        updateObservation(obs.id, 'location', e.target.value)
-                      }
-                      onBlur={handleBlur}
-                      placeholder="حدد موقع الملاحظة..."
-                      className="w-full"
-                      dir={isRTL ? 'rtl' : 'ltr'}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-                    <Label className="text-xs font-medium text-foreground/70">
-                      الوصف
-                    </Label>
-                    <Textarea
-                      value={obs.description}
-                      onChange={(e) =>
-                        updateObservation(obs.id, 'description', e.target.value)
-                      }
-                      onBlur={handleBlur}
-                      placeholder="صف الملاحظة بالتفصيل..."
-                      className="min-h-[80px] resize-y"
-                      dir={isRTL ? 'rtl' : 'ltr'}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label className="text-xs font-medium text-foreground/70">
-                      الصور الملتقطة
-                    </Label>
-                    <Input
-                      type="text"
-                      value={obs.photos}
-                      onChange={(e) =>
-                        updateObservation(obs.id, 'photos', e.target.value)
-                      }
-                      onBlur={handleBlur}
-                      placeholder="وصف الصور الملتقطة للملاحظة..."
-                      className="w-full"
-                      dir={isRTL ? 'rtl' : 'ltr'}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-foreground/70">
-                      ملاحظات إضافية
-                    </Label>
-                    <Input
-                      type="text"
-                      value={obs.additionalNotes}
-                      onChange={(e) =>
-                        updateObservation(obs.id, 'additionalNotes', e.target.value)
-                      }
-                      onBlur={handleBlur}
-                      placeholder="أي ملاحظات إضافية..."
-                      className="w-full"
-                      dir={isRTL ? 'rtl' : 'ltr'}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <span>الموقع والصور</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-5 space-y-4">
+          {/* Location Input */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-foreground/70">موقع الملاحظة ووصفها</Label>
+            <Input
+              value={formData.location}
+              onChange={(e) => updateField('location', e.target.value)}
+              placeholder="حدد موقع الملاحظة بدقة..."
+              className="w-full text-sm"
+              dir={isRTL ? 'rtl' : 'ltr'}
+              disabled={!isEditing}
+            />
+            <p className="text-[10px] text-gray-400">حدد موقع كل ملاحظة بدقة لسهولة المتابعة</p>
           </div>
+
+          {/* Photos */}
+          {renderImageUpload(
+            formData.photos,
+            handleImageUpload,
+            removeImage,
+            5
+          )}
         </CardContent>
       </Card>
 
-      {/* Assessment & Recommendations */}
+      {/* Recommendations */}
       <Card className="border-emerald-200/50 shadow-sm overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white pb-4">
           <CardTitle className="flex items-center gap-3 text-lg">
@@ -317,48 +553,54 @@ export default function TechnicalNotes({ data, onSave }: TechnicalNotesProps) {
                 <polyline points="10 9 9 9 8 9" />
               </svg>
             </div>
-            <span>التقييم والتوصيات</span>
+            <span>التوصيات والمقترحات</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-5">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground/80">
-              تقييم عام
-            </Label>
-            <Textarea
-              value={overallAssessment}
-              onChange={(e) => setOverallAssessment(e.target.value)}
-              onBlur={handleBlur}
-              placeholder="أدخل التقييم العام للملاحظات الفنية..."
-              className="min-h-[100px] resize-y"
-              dir={isRTL ? 'rtl' : 'ltr'}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground/80">
-              توصيات فنية
-            </Label>
-            <Textarea
-              value={technicalRecommendations}
-              onChange={(e) => setTechnicalRecommendations(e.target.value)}
-              onBlur={handleBlur}
-              placeholder="أدخل التوصيات الفنية..."
-              className="min-h-[100px] resize-y"
-              dir={isRTL ? 'rtl' : 'ltr'}
-            />
-          </div>
-
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSave}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 px-8"
-            >
-              حفظ الملاحظات الفنية
-            </Button>
-          </div>
+        <CardContent className="p-5">
+          <Textarea
+            value={formData.recommendations}
+            onChange={(e) => updateField('recommendations', e.target.value)}
+            placeholder="أدخل التوصيات والمقترحات بناءً على الملاحظات الفنية..."
+            className="min-h-[120px] resize-y text-sm"
+            dir={isRTL ? 'rtl' : 'ltr'}
+            disabled={!isEditing}
+          />
+          <p className="text-[10px] text-gray-400 mt-1.5">
+            اكتب التوصيات والمقترحات اللازمة لمعالجة الملاحظات المسجلة
+          </p>
         </CardContent>
       </Card>
+
+      {/* Bottom Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pb-4">
+        {isEditing ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              className="gap-2 text-sm"
+            >
+              <X className="w-4 h-4" />
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="gap-2 text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
+            >
+              <Save className="w-4 h-4" />
+              حفظ البيانات
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={handleEdit}
+            className="gap-2 text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all duration-200 px-6"
+          >
+            <Pencil className="w-4 h-4" />
+            تعديل البيانات
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
