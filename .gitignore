@@ -1,63 +1,50 @@
-# dependencies
-/node_modules
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# next.js
-/.next/
-/out/
+# Next.js
+.next/
+out/
 
-# production
-/build
+# Production
+build/
+dist/
 
-# misc
+# Misc
 .DS_Store
 *.pem
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# debug
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
-# local env files
-.env*.local
-.env
-
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# logs
+# Logs
 logs/
 *.log
-nohup.out
+server.pid
+keep-alive.pid
+3000
 
-# backups
-/backups/
-/checkpoint-*/
+# Skills (not needed for deployment)
+skills/
 
-# upload
-/upload/
+# Download
+download/
 
-# standalone
-.next/standalone/
-
-# database
-/db/*.db
-
-# prisma (unused artifact)
-/prisma/
-
-# netlify
-.netlify/
-netlify.toml.backup
-
-# worklog (development only)
-worklog.md
+# Bun
+bun.lock
